@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-url = "https://oddspedia.com/br/futebol/odds"
+url = "https://oddspedia.com/br/esports/odds"
 
 service = Service()
 options = webdriver.ChromeOptions()
@@ -31,5 +31,10 @@ for x, match in enumerate(matches,1):
     # Calculates arbitrage odds for each match independent of how many values per match (Win,Draw,Loss or Win,Loss)
     for value in match_values:
         rolling_sum += (1/float(value))
-    if(rolling_sum < 1.00):   
+    #Filters only profitable bets < 2% profit
+    if(rolling_sum < 0.98):   
         print(f"[{x}] Match: {*match_values,} - Odds: {rolling_sum}")
+
+
+#TO-DO: GET LINK FOR EACH MATCH AND DISPLAY IT
+#       LOOP SEVERAL URLS
