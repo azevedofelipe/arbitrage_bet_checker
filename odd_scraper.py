@@ -19,15 +19,17 @@ OddsNav = d.find_element(By.CLASS_NAME,"nav-calendar-mobile__next").click()
 wait.until(EC.presence_of_element_located((By.CLASS_NAME,"match-odds")))
 matches = d.find_elements(By.CLASS_NAME,"match-odds")
 
-for match in matches:
+#Loops through all matches scraped
+for x, match in enumerate(matches,1):
+    # Ignores matches without odds
     if("ODDS INDISPON" in match.text):
         continue
 
     rolling_sum = 0
-    print("Match: ",end='')
-
     match_values = match.text.splitlines()
+
+    # Calculates arbitrage odds for each match independent of how many values per match (Win,Draw,Loss or Win,Loss)
     for value in match_values:
         rolling_sum += (1/float(value))
-        print(f"{value} ",end='')
-    print(f"Odds: {rolling_sum}")
+    if(rolling_sum < 1.00):   
+        print(f"[{x}] Match: {*match_values,} - Odds: {rolling_sum}")
