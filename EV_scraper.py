@@ -36,19 +36,17 @@ for x, match in enumerate(matches,1):
     for value in match_values:
         curr_fair_odds = 0
         sum_odds = 0
+        rest_odds = 0
+        curr_bet_profit = 0
+        curr_result = 0
         final_odds = []
 
-        for value_2 in match_values:
-            sum_odds += float(value_2)
-
-        curr_fair_odds = 1 / (sum_odds / len(match_values))
+        curr_fair_odds = 1 / float(value)
         rest_odds = 1 - curr_fair_odds
         curr_bet_profit = (float(value) * BASE_BET) - BASE_BET
-        rest_profit = -(BASE_BET)
 
-        curr_result = ((curr_bet_profit * curr_fair_odds) + (rest_profit * rest_odds))
-        if(curr_result > 0):
-            print(f"[EV: {value}] ${curr_bet_profit:.2f} x {curr_fair_odds:.4f} + ${rest_profit} x {rest_odds:.4f} = {curr_result:.4f} | ",end='')
+        curr_result = ((curr_bet_profit * curr_fair_odds) - (BASE_BET * rest_odds))
+        if(curr_result > 0.1):
+            print(f"[EV: {value}] ${curr_bet_profit:.2f} x {curr_fair_odds:.4f} - ${BASE_BET} x {rest_odds:.4f} = {curr_result:.8f} | ",end='')
 
-
-#TO-DO: CHANGE TO BETWAY LINK OR SOME BETTING SITE
+# GET FAIR ODDS FROM BETFAIR EXCHANGE IN ORDER FOR THIS TO WORK
