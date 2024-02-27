@@ -1,4 +1,5 @@
-# Script to scrape through oddspedia.com looking for good arbitrage betting odds (< 1.00) and notifying of the bets found
+# Script to scrape through oddspedia.com looking for good arbitrage betting odds (> 1% profit) and notifying of the bets found
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -7,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
-
+# Initialize selenium scraper
 service = Service()
 options = webdriver.ChromeOptions()
 d = webdriver.Chrome(service=service, options=options)
@@ -23,6 +24,7 @@ blacklist = ["Betwinner"]
 
 next_day = 2
 count_day = 0
+profit_bets = []
 
 # Scrape matches from every day until user decides to stop
 while(next_day != 0):
@@ -85,27 +87,34 @@ while(next_day != 0):
                 #Filters only profitable bets
                 if(rolling_sum >= 1 and rolling_sum != 0):
                     count += 1
-                    print(f"[{count}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link}")
-                    print(f"Sites: {*site,}")
-
+                    curr_bet = [status.text,*odds,rolling_sum,link,*site]
+                    profit_bets.append(curr_bet)
+                    print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
+        
+        # Display number of good bets and number of blacklisted bets
         if(count == 0):
             print(f"No good odds | Blocked: {blocked_count}")
         else:
             print(f"{count} Good Odds | Blocked: {blocked_count}")
 
+    # Get user input to end or go to next day
     print("-"*180,end='\n')
-    user_next_day = input("Continue to next day? (Y) (N):  ")
-    if user_next_day == 'Y':
-        print(f"Scanning next days matches...")
-        next_day = 1
-        count_day += 1
-    else:
-        print(f"Exiting...")
-        next_day = 0
+    user_next_day = input("Access specific bet data by index: (I) \nContinue to next day: (Y) (N)\n")
+    match user_next_day:
+        case "Y":
+            print(f"Scanning next days matches...")
+            next_day = 1
+            count_day += 1
+        case "N":
+            print(f"Exiting...")
+            next_day = 0
+        case "I":
+            bet_index = int(input("Enter bet number: "))
+            print(*profit_bets[bet_index-1])
+            user_next_day = input("Access specific bet data by index: (I) \nContinue to next day: (Y) (N)\n")
 
 
 # ADD SUPPORT TO CHANGE REGIONS, DICT WITH ALL REGIONS AND SWITCH
-# FIGURE OUT WAY TO CHOOSE DAYS
 # ADD THE CALCULATOR FROM THE WEBSITE
+# ADD ALL GOOD BETS TO A LIST, ALLOW USER TO GET DETAILS (SUCH AS CALCULATOR) ABOUT A SPECIFIC MATCH USING ITS INDEX
 # LOOK FOR OVER UNDER OPPORTUNITIES
-# SCAN FOR NO MATCHES ON PAGE AND SKIP
