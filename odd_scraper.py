@@ -99,7 +99,7 @@ while(next_day != 0):
 
     # Get user input to end or go to next day
     print("-"*180,end='\n')
-    user_next_day = input("Access specific bet data by index: (I) \nContinue to next day: (Y) (N)\n")
+    user_next_day = input("Access specific bet data by index: (I) \nContinue to next day: (Y) (N) \nRescan current day: (R) \n")
     match user_next_day:
         case "Y":
             print(f"Scanning next days matches...")
@@ -108,6 +108,10 @@ while(next_day != 0):
         case "N":
             print(f"Exiting...")
             next_day = 0
+        case "R":
+            print("Rescanning...")
+            next_day = next_day
+            count_day = count_day
         case "I":
             bet_index = int(input("Enter bet number: "))
             print(*profit_bets[bet_index-1])
