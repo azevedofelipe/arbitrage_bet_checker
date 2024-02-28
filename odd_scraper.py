@@ -7,29 +7,73 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-
-# Initialize selenium scraper
-service = Service()
-options = webdriver.ChromeOptions()
-d = webdriver.Chrome(service=service, options=options)
-wait = WebDriverWait(d,10)
+import os
 
 
-
-urls = ["https://oddspedia.com/br/esports/odds","https://oddspedia.com/br/futebol/odds","https://oddspedia.com/br/basquete/odds","https://oddspedia.com/br/voleibol/odds",
-        "https://oddspedia.com/br/tenis/odds","https://oddspedia.com/br/tenis-de-mesa/odds","https://oddspedia.com/br/hoquei-no-gelo/odds","https://oddspedia.com/br/artes-marciais-mistas/odds"]
-
-# Future implementation of list of blacklisted sites, currently using string
-blacklist = ["Betwinner"]
-
+# Initialize day selection values
 next_day = 2
 count_day = 0
 profit_bets = []
 
+# Future implementation of list of blacklisted sites, currently using string
+site_list = []
+blacklist = []
+
+# User configuration to choose sports to scrape for bets
+urls = {"E-Sports":"https://oddspedia.com/br/esports/odds","Futebol":"https://oddspedia.com/br/futebol/odds","Basquete":"https://oddspedia.com/br/basquete/odds","Volei":"https://oddspedia.com/br/voleibol/odds",
+        "Tenis":"https://oddspedia.com/br/tenis/odds","Ping Pong":"https://oddspedia.com/br/tenis-de-mesa/odds","Hoquei":"https://oddspedia.com/br/hoquei-no-gelo/odds","MMA":"https://oddspedia.com/br/artes-marciais-mistas/odds"}
+user_urls = []
+sports_selected = []
+list_of_urls = list(urls.keys())
+
+# Prints all items in an array and its index + 1
+def print_sports(arr_urls):
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("[0] - Select All",end= ' | ')
+    for (i,item) in enumerate(arr_urls,start=1):
+        print(f"[{i}] - {item}",end=' | ')
+
+# Receives user input to select sports to scan
+user_site_choices = -1
+while(user_site_choices != "C"):
+    print_sports(list_of_urls)
+    user_site_choices = input("\nSelect the sports you would like to scan for bets, (C) to continue: ")
+
+    match user_site_choices:
+        case "0":           # Selects all sports and continues
+            user_urls = list(urls.values())
+            sports_selected = list(urls.keys())
+            user_site_choices = "C"
+        case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
+            if not user_urls:
+                next_day = 0
+        case _:
+            user_urls.append(urls[list_of_urls[int(user_site_choices)-1]])
+            sports_selected.append(list_of_urls[int(user_site_choices)-1])
+            list_of_urls.pop(int(user_site_choices)-1)
+
+    # If no more sports available to select, break
+    if not list_of_urls:
+        break
+
 # Scrape matches from every day until user decides to stop
 while(next_day != 0):
-    for url in urls:
-        print("-"*180,end='\n')
+
+    # Initialize selenium scraper
+    service = Service()
+    options = webdriver.ChromeOptions()
+    d = webdriver.Chrome(service=service, options=options)
+    wait = WebDriverWait(d,10)
+
+    # Outputs which sports will be scanned
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("Scanning for bets in the following sports:")
+    print(*sports_selected,sep=', ')
+
+
+    for i,url in enumerate(user_urls,0):
+        print(f"\n{sports_selected[i]}: ")
+        print("-"*200,end='\n')
 
         d.get(url)
 
@@ -99,15 +143,16 @@ while(next_day != 0):
 
     # Get user input to end or go to next day
     print("-"*180,end='\n')
-    user_next_day = input("Access specific bet data by index: (I) \nContinue to next day: (Y) (N) \nRescan current day: (R) \n")
+    user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (Y) \nRescan current day: (R) \nExit: (E) \n")
     match user_next_day:
         case "Y":
             print(f"Scanning next days matches...")
             next_day = 1
             count_day += 1
-        case "N":
+        case "E":
             print(f"Exiting...")
             next_day = 0
+            break
         case "R":
             print("Rescanning...")
             next_day = next_day
@@ -115,10 +160,16 @@ while(next_day != 0):
         case "I":
             bet_index = int(input("Enter bet number: "))
             print(*profit_bets[bet_index-1])
-            user_next_day = input("Access specific bet data by index: (I) \nContinue to next day: (Y) (N)\n")
+            #Add way to go deeper into details
+            user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (Y) \nRescan current day: (R) \nExit: (E) \n")
+        case _:
+            print("Please enter a valid input!")
+            user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (Y) \nRescan current day: (R) \nExit: (E) \n")
 
 
-# ADD SUPPORT TO CHANGE REGIONS, DICT WITH ALL REGIONS AND SWITCH
 # ADD THE CALCULATOR FROM THE WEBSITE
 # ADD ALL GOOD BETS TO A LIST, ALLOW USER TO GET DETAILS (SUCH AS CALCULATOR) ABOUT A SPECIFIC MATCH USING ITS INDEX
+# ADD OPTION TO ADD SITES TO Blacklist, FIGURE OUT HOW TO USE BLACKLIST ARRAY INSTEAD OF STRING
+
+
 # LOOK FOR OVER UNDER OPPORTUNITIES
