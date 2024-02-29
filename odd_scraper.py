@@ -27,9 +27,8 @@ blacklist = []
 # User configuration to choose sports to scrape for bets
 urls = {"E-Sports":"https://oddspedia.com/br/esports/odds","Futebol":"https://oddspedia.com/br/futebol/odds","Basquete":"https://oddspedia.com/br/basquete/odds","Volei":"https://oddspedia.com/br/voleibol/odds",
         "Tenis":"https://oddspedia.com/br/tenis/odds","Ping Pong":"https://oddspedia.com/br/tenis-de-mesa/odds","Hoquei":"https://oddspedia.com/br/hoquei-no-gelo/odds","MMA":"https://oddspedia.com/br/artes-marciais-mistas/odds"}
-user_urls = []
-sports_selected = []
-list_of_urls = list(urls.keys())
+user_urls = list(urls.values())
+sports_selected = list(urls.keys())
 
 
 # Prints all items in an array and its index + 1
@@ -65,30 +64,45 @@ def user_sports(user_urls,sports_selected):
     user_sport_choices = -1
     while(user_sport_choices != "C"):
         os.system('cls' if os.name == 'nt' else 'clear')
-        print_list(list_of_urls,"[0] - Select All")
-        user_sport_choices = input("\nSelect the sports you would like to scan for bets, (C) to continue: ")
+        print_list(sports_selected,"")
+        user_sport_choices = input("\nRemove the sports you would not like to scan for bets, (C) to continue: ")
 
         match user_sport_choices.upper():
             case "0":           # Selects all sports and continues
-                user_urls = list(urls.values())
-                sports_selected = list(urls.keys())
-                user_sport_choices = "C"
+                pass
             case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
                 pass
-            case _:
-                user_urls.append(urls[list_of_urls[int(user_sport_choices)-1]])
-                sports_selected.append(list_of_urls[int(user_sport_choices)-1])
-                list_of_urls.pop(int(user_sport_choices)-1)
+            case _:             # Removes user selected sport from list
+                user_urls.pop(int(user_sport_choices)-1)
+                sports_selected.pop(int(user_sport_choices)-1)
 
         # If no more sports available to select, break
-        if not list_of_urls:
+        if not sports_selected:
             break
     return user_urls,sports_selected
 
+def current_settings(settings_input):
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print(f"Current settings:\n Sports: {*sports_selected,}\n Blacklist: {*blacklist,}\n\n")
+    settings_input = input("[E] - Edit Settings\n[C] Continue\n")
+    os.system('cls' if os.name == 'nt' else 'clear')
+    return settings_input
 
-blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
 
-user_urls,sports_selected = user_sports(user_urls=user_urls,sports_selected=sports_selected)
+os.system('cls' if os.name == 'nt' else 'clear')
+user_settings_choice = -1
+while user_settings_choice != "C":
+    user_settings_choice = input("\nSettings:\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Settings\n[C] Continue\n")
+
+    match user_settings_choice.upper():
+        case "1":           # Selects all sports and continues
+            blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
+        case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
+            user_urls,sports_selected = user_sports(user_urls=user_urls,sports_selected=sports_selected)
+        case "3":
+            user_settings_choice = current_settings(user_settings_choice)
+        case "C":
+            pass
 
 if not user_urls:
     next_day = 0
@@ -104,8 +118,13 @@ while(next_day != 0):
 
     # Outputs which sports will be scanned
     os.system('cls' if os.name == 'nt' else 'clear')
+    
     print("Blacklisted Bookmakers: ")
-    print(*blacklist,sep=', ')
+    if not blacklist:
+        print("No blacklisted bookmakers")
+    else:
+        print(*blacklist,sep=', ')
+
     print("Scanning for bets in the following sports:")
     print(*sports_selected,sep=', ')
 
