@@ -9,15 +9,20 @@ from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import os
 
-
 # Initialize day selection values
 next_day = 2
 count_day = 0
 profit_bets = []
 
-# Future implementation of list of blacklisted sites, currently using string
-site_list = []
+# List of all bookmakers scanned, and initalize blacklist as empty
+bookmakers = ['1xBet', '20Bet', '22Bet', '31bet', '4rabet', 'Adjarabet', 'Amuletobet', 'BC.Game Sport', 'bet365', 'Bet7', 'Bet9', 'bet90', 'Betano', 'Betboo Sport',
+            'Betcris', 'Betfair', 'Bethard', 'Betibet', 'BetKwiff', 'Betmotion Sport', 'Betobet', 'Betsafe', 'Betsson', 'Betsul', 'Bettilt', 'Betwarrior', 'Betway',
+            'Betwinner', 'Blaze', 'BlueChip', 'Bodog', 'Bwin', 'Bzeebet', 'Cloudbet', 'ComeOn', 'Dafabet', 'Dafabet LATAM', 'Fezbet', 'Freshbet', 'Galera.Bet', 'GG.BET',
+            'Goldenbet', 'Instabet', 'Ivibet', 'Jackbit', 'Kto', 'LeoVegas Sport', 'Loot.bet', 'LSbet', 'LVBET', 'Marathonbet', 'Megapari Sport', 'Midnite', 'Mostbet', 
+            'Mr Green Sport', 'Mystake', 'NetBet', 'Nine Casino', 'Parimatch', 'Pin-up', 'Pinnacle', 'Powbet', 'Rivalo', 'Rivalry', 'Rolletto.com', 'Roobet', 'SnatchCasino',
+            'Sportaza', 'Sportsbet.io', 'Stake.com', 'Suprabets', 'TonyBet', 'Vave', 'Weltbet', 'Zebet']
 blacklist = []
+
 
 # User configuration to choose sports to scrape for bets
 urls = {"E-Sports":"https://oddspedia.com/br/esports/odds","Futebol":"https://oddspedia.com/br/futebol/odds","Basquete":"https://oddspedia.com/br/basquete/odds","Volei":"https://oddspedia.com/br/voleibol/odds",
@@ -26,35 +31,67 @@ user_urls = []
 sports_selected = []
 list_of_urls = list(urls.keys())
 
+
 # Prints all items in an array and its index + 1
-def print_sports(arr_urls):
-    os.system('cls' if os.name == 'nt' else 'clear')
-    print("[0] - Select All",end= ' | ')
+def print_list(arr_urls,zero_text):
+    print(zero_text,end= ' | ')
     for (i,item) in enumerate(arr_urls,start=1):
         print(f"[{i}] - {item}",end=' | ')
 
+# User blacklist configuration section
+def user_bookmaker(blacklist,bookmakers):
+    user_bookmaker_choices = -1
+    while(user_bookmaker_choices != "C"):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        if blacklist:
+            print(f"Current blacklisted sites: {*blacklist,}")
+
+        print_list(bookmakers,"[0] - None")
+        user_bookmaker_choices = input("\nSelect bookmakers you would like to blacklist, (C) to continue: ")
+
+        match user_bookmaker_choices.upper():
+            case "0":           # Selects all sports and continues
+                user_bookmaker_choices = "C"
+            case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
+                user_bookmaker_choices = "C"
+            case _:
+                blacklist.append(bookmakers[int(user_bookmaker_choices)-1])
+                bookmakers.pop(int(user_bookmaker_choices)-1)
+    return blacklist,bookmakers
+
+
 # Receives user input to select sports to scan
-user_site_choices = -1
-while(user_site_choices != "C"):
-    print_sports(list_of_urls)
-    user_site_choices = input("\nSelect the sports you would like to scan for bets, (C) to continue: ")
+def user_sports(user_urls,sports_selected):
+    user_sport_choices = -1
+    while(user_sport_choices != "C"):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print_list(list_of_urls,"[0] - Select All")
+        user_sport_choices = input("\nSelect the sports you would like to scan for bets, (C) to continue: ")
 
-    match user_site_choices:
-        case "0":           # Selects all sports and continues
-            user_urls = list(urls.values())
-            sports_selected = list(urls.keys())
-            user_site_choices = "C"
-        case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
-            if not user_urls:
-                next_day = 0
-        case _:
-            user_urls.append(urls[list_of_urls[int(user_site_choices)-1]])
-            sports_selected.append(list_of_urls[int(user_site_choices)-1])
-            list_of_urls.pop(int(user_site_choices)-1)
+        match user_sport_choices.upper():
+            case "0":           # Selects all sports and continues
+                user_urls = list(urls.values())
+                sports_selected = list(urls.keys())
+                user_sport_choices = "C"
+            case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
+                pass
+            case _:
+                user_urls.append(urls[list_of_urls[int(user_sport_choices)-1]])
+                sports_selected.append(list_of_urls[int(user_sport_choices)-1])
+                list_of_urls.pop(int(user_sport_choices)-1)
 
-    # If no more sports available to select, break
-    if not list_of_urls:
-        break
+        # If no more sports available to select, break
+        if not list_of_urls:
+            break
+    return user_urls,sports_selected
+
+
+blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
+
+user_urls,sports_selected = user_sports(user_urls=user_urls,sports_selected=sports_selected)
+
+if not user_urls:
+    next_day = 0
 
 # Scrape matches from every day until user decides to stop
 while(next_day != 0):
@@ -67,6 +104,8 @@ while(next_day != 0):
 
     # Outputs which sports will be scanned
     os.system('cls' if os.name == 'nt' else 'clear')
+    print("Blacklisted Bookmakers: ")
+    print(*blacklist,sep=', ')
     print("Scanning for bets in the following sports:")
     print(*sports_selected,sep=', ')
 
@@ -124,7 +163,8 @@ while(next_day != 0):
                 # Calculates as a percentage of profit for user    
                 rolling_sum = (1 - rolling_sum) * 100
 
-                if("Betwinner" in site and rolling_sum >= 1 and rolling_sum != 0):
+                # Filter out blacklisted bookmakers from profitable bets
+                if(any(x in site for x in blacklist) and rolling_sum >= 1 and rolling_sum != 0):
                     blocked_count += 1
                     rolling_sum = 0
 
