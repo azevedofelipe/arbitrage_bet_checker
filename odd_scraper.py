@@ -32,10 +32,17 @@ sports_selected = list(urls.keys())
 
 
 # Prints all items in an array and its index + 1
-def print_list(arr_urls,zero_text):
-    print(zero_text,end= ' | ')
+def print_list(arr_urls):
     for (i,item) in enumerate(arr_urls,start=1):
-        print(f"[{i}] - {item}",end=' | ')
+        if(i < 10):
+            print(f"[0{i}] - {item:^15}",end=' | ')
+        else:
+            print(f"[{i}] - {item:^15}",end=' | ')
+        if i % 8 == 0:
+            print()
+    print()
+    print("-"*200,end='\n')
+        
 
 # User blacklist configuration section
 def user_bookmaker(blacklist,bookmakers):
@@ -45,8 +52,8 @@ def user_bookmaker(blacklist,bookmakers):
         if blacklist:
             print(f"Current blacklisted sites: {*blacklist,}")
 
-        print_list(bookmakers,"[0] - None")
-        user_bookmaker_choices = input("\nSelect bookmakers you would like to blacklist, (C) to continue: ")
+        print_list(bookmakers)
+        user_bookmaker_choices = input("Select bookmakers you would like to blacklist:\n[0] None\n[C] to Continue\n")
 
         match user_bookmaker_choices.upper():
             case "0":           # Selects all sports and continues
@@ -64,7 +71,7 @@ def user_sports(user_urls,sports_selected):
     user_sport_choices = -1
     while(user_sport_choices != "C"):
         os.system('cls' if os.name == 'nt' else 'clear')
-        print_list(sports_selected,"")
+        print_list(sports_selected)
         user_sport_choices = input("\nRemove the sports you would not like to scan for bets, (C) to continue: ")
 
         match user_sport_choices.upper():
@@ -83,8 +90,8 @@ def user_sports(user_urls,sports_selected):
 
 def current_settings(settings_input):
     os.system('cls' if os.name == 'nt' else 'clear')
-    print(f"Current settings:\n Sports: {*sports_selected,}\n Blacklist: {*blacklist,}\n\n")
-    settings_input = input("[E] - Edit Settings\n[C] Continue\n")
+    print(f"Current settings:\nSports: {*sports_selected,}\nBlacklist: {*blacklist,}\n\n")
+    settings_input = input("[E] - Edit Settings\n[C] - Run Script\n")
     os.system('cls' if os.name == 'nt' else 'clear')
     return settings_input
 
@@ -118,7 +125,7 @@ while(next_day != 0):
 
     # Outputs which sports will be scanned
     os.system('cls' if os.name == 'nt' else 'clear')
-    
+
     print("Blacklisted Bookmakers: ")
     if not blacklist:
         print("No blacklisted bookmakers")
@@ -217,7 +224,7 @@ while(next_day != 0):
             next_day = next_day
             count_day = count_day
         case "I":
-            bet_index = int(input("Enter bet number: "))
+            bet_index = int(input("Enter match number: "))
             print(*profit_bets[bet_index-1])
             #Add way to go deeper into details
             user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (Y) \nRescan current day: (R) \nExit: (E) \n")
@@ -228,7 +235,6 @@ while(next_day != 0):
 
 # ADD THE CALCULATOR FROM THE WEBSITE
 # ADD ALL GOOD BETS TO A LIST, ALLOW USER TO GET DETAILS (SUCH AS CALCULATOR) ABOUT A SPECIFIC MATCH USING ITS INDEX
-# ADD OPTION TO ADD SITES TO Blacklist, FIGURE OUT HOW TO USE BLACKLIST ARRAY INSTEAD OF STRING
 
 
 # LOOK FOR OVER UNDER OPPORTUNITIES
