@@ -8,6 +8,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import os
+import time
+from arb_calculator import calculator
 
 # Initialize day selection values
 next_day = 2
@@ -48,7 +50,7 @@ def print_list(arr_urls):
 def user_bookmaker(blacklist,bookmakers):
     user_bookmaker_choices = -1
     while(user_bookmaker_choices != "C"):
-        os.system('cls' if os.name == 'nt' else 'clear')
+        clear_terminal()
         if blacklist:
             print(f"Current blacklisted sites: {*blacklist,}")
 
@@ -70,7 +72,7 @@ def user_bookmaker(blacklist,bookmakers):
 def user_sports(user_urls,sports_selected):
     user_sport_choices = -1
     while(user_sport_choices != "C"):
-        os.system('cls' if os.name == 'nt' else 'clear')
+        clear_terminal()
         print_list(sports_selected)
         user_sport_choices = input("\nRemove the sports you would not like to scan for bets, (C) to continue: ")
 
@@ -88,18 +90,35 @@ def user_sports(user_urls,sports_selected):
             break
     return user_urls,sports_selected
 
+
+# Displays current blacklist and sports configurations
 def current_settings(settings_input):
-    os.system('cls' if os.name == 'nt' else 'clear')
-    print(f"Current settings:\nSports: {*sports_selected,}\nBlacklist: {*blacklist,}\n\n")
+
+    clear_terminal()
+    print(f"Current settings:\nSports Selected: {*sports_selected,}\nBlacklist: {*blacklist,}\n\n")
     settings_input = input("[E] - Edit Settings\n[C] - Run Script\n")
-    os.system('cls' if os.name == 'nt' else 'clear')
+    clear_terminal()
+
     return settings_input
 
 
-os.system('cls' if os.name == 'nt' else 'clear')
+# Displays match info based on user input
+def match_info(profit_bets):
+    print(f"[{len(*profit_bets)}] - {*profit_bets[0],}")
+    bet_index = int(input("Enter match number: "))
+    print(*profit_bets[bet_index-1])
+
+# Clears terminal output for better interface
+def clear_terminal():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
+
+# Initial screen with all options
+clear_terminal()
+print("Sports Arbitrage Checking Bot!")
 user_settings_choice = -1
 while user_settings_choice != "C":
-    user_settings_choice = input("\nSettings:\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Settings\n[C] Continue\n")
+    user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Current Configuration\n[C] - Continue\n[E] - Exit\n")
 
     match user_settings_choice.upper():
         case "1":           # Selects all sports and continues
@@ -110,7 +129,14 @@ while user_settings_choice != "C":
             user_settings_choice = current_settings(user_settings_choice)
         case "C":
             pass
-
+        case "E":
+            user_settings_choice = "C"
+            next_day = 0
+        case _:
+            clear_terminal()
+            print("Please enter a valid input!")
+            time.sleep(1)
+            
 if not user_urls:
     next_day = 0
 
@@ -124,7 +150,7 @@ while(next_day != 0):
     wait = WebDriverWait(d,10)
 
     # Outputs which sports will be scanned
-    os.system('cls' if os.name == 'nt' else 'clear')
+    clear_terminal()
 
     print("Blacklisted Bookmakers: ")
     if not blacklist:
@@ -224,17 +250,10 @@ while(next_day != 0):
             next_day = next_day
             count_day = count_day
         case "I":
-            bet_index = int(input("Enter match number: "))
-            print(*profit_bets[bet_index-1])
-            #Add way to go deeper into details
-            user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (Y) \nRescan current day: (R) \nExit: (E) \n")
+            match_info(profit_bets=profit_bets)
         case _:
             print("Please enter a valid input!")
             user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (Y) \nRescan current day: (R) \nExit: (E) \n")
 
 
 # ADD THE CALCULATOR FROM THE WEBSITE
-# ADD ALL GOOD BETS TO A LIST, ALLOW USER TO GET DETAILS (SUCH AS CALCULATOR) ABOUT A SPECIFIC MATCH USING ITS INDEX
-
-
-# LOOK FOR OVER UNDER OPPORTUNITIES
