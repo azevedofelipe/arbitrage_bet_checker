@@ -5,10 +5,11 @@ def main():
 if __name__ == '__main__':
     main()
 else:
-    def calculator(odds):
+    def calculator(odds,bet_amount):
         unbiased_bet = {}   #Stores the amount to bet for each outcome for even profit
         
-        bet_amount = int(input("\nEnter the amount you wish to bet on this match: "))
+        if not bet_amount:
+            bet_amount = int(input("\nEnter the amount you wish to bet on this match: "))
 
         for odd in odds:
             bet_outputs = []
@@ -16,7 +17,7 @@ else:
             # Calculates the number to divide bet_amount by
             for odd2 in odds:
                 odd_cumulative += odd / odd2
-                initial_bet = bet_amount/odd_cumulative
+            initial_bet = bet_amount/odd_cumulative
             
             bet_outputs.append(round(initial_bet,2))
 
@@ -25,6 +26,25 @@ else:
 
         return(unbiased_bet)
     
+    def calculate_remaining_bets(odds):
+        for x,odd in enumerate(odds,1):
+            print(f"[{x}] - {odd:.2f}")
+            
+        odd_selected = int(input("Which odd are you betting on: "))
+        odd_selected = odds[odd_selected-1]
+        amount_bet = float(input("How much are you betting on {odd_selected:.2f}: "))
+
+        for odd1 in odds:
+            value_multiplier = odd_selected / odd1
+        total_bet = value_multiplier * amount_bet
+
+        print(f"You need to bet ${total_bet} in order to bet ${amount_bet} on {odd_selected}")
+        calculator(odds=odds,bet_amount=total_bet)
+                
+
+
+
+
     def print_calc_results(unbiased_bet):
         keys = list(unbiased_bet.keys())
         print("\nPlace following amount on respective odds:")
