@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import os
 import time
-from arb_calculator import calculator
+from arb_calculator import calculator, print_calc_results
 
 # Initialize day selection values
 next_day = 2
@@ -28,7 +28,9 @@ blacklist = []
 
 # User configuration to choose sports to scrape for bets
 urls = {"E-Sports":"https://oddspedia.com/br/esports/odds","Futebol":"https://oddspedia.com/br/futebol/odds","Basquete":"https://oddspedia.com/br/basquete/odds","Volei":"https://oddspedia.com/br/voleibol/odds",
-        "Tenis":"https://oddspedia.com/br/tenis/odds","Ping Pong":"https://oddspedia.com/br/tenis-de-mesa/odds","Hoquei":"https://oddspedia.com/br/hoquei-no-gelo/odds","MMA":"https://oddspedia.com/br/artes-marciais-mistas/odds"}
+        "Tenis":"https://oddspedia.com/br/tenis/odds","Ping Pong":"https://oddspedia.com/br/tenis-de-mesa/odds","Hoquei":"https://oddspedia.com/br/hoquei-no-gelo/odds","MMA":"https://oddspedia.com/br/artes-marciais-mistas/odds",
+        "Futsal": "https://oddspedia.com/br/futsal/odds"}
+
 user_urls = list(urls.values())
 sports_selected = list(urls.keys())
 
@@ -77,13 +79,15 @@ def user_sports(user_urls,sports_selected):
         user_sport_choices = input("\nRemove the sports you would not like to scan for bets, (C) to continue: ")
 
         match user_sport_choices.upper():
-            case "0":           # Selects all sports and continues
-                pass
             case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
                 pass
             case _:             # Removes user selected sport from list
-                user_urls.pop(int(user_sport_choices)-1)
-                sports_selected.pop(int(user_sport_choices)-1)
+                if not user_sport_choices.isnumeric():
+                    print("Enter valid number")
+                    break
+                elif int(user_sport_choices) -1 < len(sports_selected) and int(user_sport_choices) > 0:
+                    user_urls.pop(int(user_sport_choices)-1)
+                    sports_selected.pop(int(user_sport_choices)-1)
 
         # If no more sports available to select, break
         if not sports_selected:
@@ -103,22 +107,65 @@ def current_settings(settings_input):
 
 
 # Displays match info based on user input
-def match_info(profit_bets):
-    print(f"[{len(*profit_bets)}] - {*profit_bets[0],}")
-    bet_index = int(input("Enter match number: "))
-    print(*profit_bets[bet_index-1])
+def match_info(profit_bets):    
+    for x,bet in enumerate(profit_bets,1):
+        print(f"[{x}] Odds: {*bet[1],} - Sure Profit: {bet[2]}% - Bookmakers: {*bet[4],} - Link: {bet[3]}")
+
+    bet_index = input("[C] - Close\nEnter match number: ").upper()
+
+    if bet_index == "C":
+        return
+    else:
+        chosen_match = profit_bets[int(bet_index)-1]
+
+    clear_terminal()
+    print("Selected Match:")
+    print(f"[{x}] Odds: {*chosen_match[1],} - Sure Profit: {chosen_match[2]}% - Bookmakers: {*chosen_match[4],} - Link: {chosen_match[3]}")
+    user_match_choice = input("\n[C] - Calculator\n[R] - Return\n")
+    
+    match user_match_choice.upper():
+        case "C":
+            print_calc_results(calculator(chosen_match[1]))
+        case "R":
+            pass
 
 # Clears terminal output for better interface
 def clear_terminal():
     os.system('cls' if os.name == 'nt' else 'clear')
-    
+
+
+# Get user input to end or go to next day
+def end_interface():
+    global next_day,count_day
+    print("-"*180,end='\n')
+    user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (N) \nRescan current day: (R) \nExit: (E) \n")
+    match user_next_day:
+        case "N":
+            print(f"Scanning next days matches...")
+            next_day = 1
+            count_day += 1
+        case "E":
+            print(f"Exiting...")
+            next_day = 0
+        case "R":
+            print("Rescanning...")
+            next_day = next_day
+            count_day = count_day
+        case "I":
+            if profit_bets:
+                match_info(profit_bets=profit_bets)
+            end_interface()
+            # Remove this and make a while loop/function with this feature
+        case _:
+            print("Please enter a valid input!")
+            end_interface()
 
 # Initial screen with all options
 clear_terminal()
 print("Sports Arbitrage Checking Bot!")
 user_settings_choice = -1
 while user_settings_choice != "C":
-    user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Current Configuration\n[C] - Continue\n[E] - Exit\n")
+    user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Current Configuration\n[C] - Continue\n[E] - Exit\n").upper()
 
     match user_settings_choice.upper():
         case "1":           # Selects all sports and continues
@@ -139,15 +186,15 @@ while user_settings_choice != "C":
             
 if not user_urls:
     next_day = 0
-
-# Scrape matches from every day until user decides to stop
-while(next_day != 0):
-
+else:
     # Initialize selenium scraper
     service = Service()
     options = webdriver.ChromeOptions()
     d = webdriver.Chrome(service=service, options=options)
     wait = WebDriverWait(d,10)
+
+# Scrape matches from every day until user decides to stop
+while(next_day != 0):
 
     # Outputs which sports will be scanned
     clear_terminal()
@@ -160,7 +207,6 @@ while(next_day != 0):
 
     print("Scanning for bets in the following sports:")
     print(*sports_selected,sep=', ')
-
 
     for i,url in enumerate(user_urls,0):
         print(f"\n{sports_selected[i]}: ")
@@ -209,8 +255,9 @@ while(next_day != 0):
             else:
                 rolling_sum = 0
                 # Calculates arbitrage odds for each match independent of how many values per match (Win,Draw,Loss or Win,Loss)
-                for value in odds:
+                for x,value in enumerate(odds,0):
                     rolling_sum += (1/float(value))
+                    odds[x] = float(value)              # Cast each odd from string to float
 
                 # Calculates as a percentage of profit for user    
                 rolling_sum = (1 - rolling_sum) * 100
@@ -223,7 +270,7 @@ while(next_day != 0):
                 #Filters only profitable bets
                 if(rolling_sum >= 1 and rolling_sum != 0):
                     count += 1
-                    curr_bet = [status.text,*odds,rolling_sum,link,*site]
+                    curr_bet = [status.text,odds,round(rolling_sum,2),link,site]
                     profit_bets.append(curr_bet)
                     print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
         
@@ -233,27 +280,8 @@ while(next_day != 0):
         else:
             print(f"{count} Good Odds | Blocked: {blocked_count}")
 
-    # Get user input to end or go to next day
-    print("-"*180,end='\n')
-    user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (Y) \nRescan current day: (R) \nExit: (E) \n")
-    match user_next_day:
-        case "Y":
-            print(f"Scanning next days matches...")
-            next_day = 1
-            count_day += 1
-        case "E":
-            print(f"Exiting...")
-            next_day = 0
-            break
-        case "R":
-            print("Rescanning...")
-            next_day = next_day
-            count_day = count_day
-        case "I":
-            match_info(profit_bets=profit_bets)
-        case _:
-            print("Please enter a valid input!")
-            user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (Y) \nRescan current day: (R) \nExit: (E) \n")
+    end_interface()
 
-
-# ADD THE CALCULATOR FROM THE WEBSITE
+# RUN SELENIUM IN PARRALEL FOR EACH SPORT
+# CREATE A SETTINGS FILE TO STORE USER SETTINGS AND ADD NEW SPORTS TO THE LIST
+# CLEAN UP SPAGHETTI OF ALL THESE INTERFACES INTERACTIONS, POSSIBLY LOOK INTO PYTHON GUI
