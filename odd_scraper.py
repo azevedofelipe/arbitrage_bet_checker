@@ -63,7 +63,7 @@ def user_bookmaker(blacklist,bookmakers):
             case "0":           # Selects all sports and continues
                 user_bookmaker_choices = "C"
             case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
-                user_bookmaker_choices = "C"
+                clear_terminal()
             case _:
                 blacklist.append(bookmakers[int(user_bookmaker_choices)-1])
                 bookmakers.pop(int(user_bookmaker_choices)-1)
@@ -80,7 +80,7 @@ def user_sports(user_urls,sports_selected):
 
         match user_sport_choices.upper():
             case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
-                pass
+                clear_terminal()
             case _:             # Removes user selected sport from list
                 if not user_sport_choices.isnumeric():
                     print("Enter valid number")
@@ -93,17 +93,6 @@ def user_sports(user_urls,sports_selected):
         if not sports_selected:
             break
     return user_urls,sports_selected
-
-
-# Displays current blacklist and sports configurations
-def current_settings(settings_input):
-
-    clear_terminal()
-    print(f"Current settings:\nSports Selected: {*sports_selected,}\nBlacklist: {*blacklist,}\n\n")
-    settings_input = input("[E] - Edit Settings\n[C] - Run Script\n")
-    clear_terminal()
-
-    return settings_input
 
 
 # Displays match info based on user input
@@ -136,54 +125,64 @@ def clear_terminal():
 
 # Get user input to end or go to next day
 def end_interface():
-    global next_day,count_day
+    global next_day,count_day,blacklist,bookmakers,user_urls,sports_selected
+
     print("-"*180,end='\n')
-    user_next_day = input("\nAccess specific bet data by index: (I) \nContinue to next day: (N) \nRescan current day: (R) \nExit: (E) \n")
-    match user_next_day:
-        case "N":
-            print(f"Scanning next days matches...")
-            next_day = 1
-            count_day += 1
-        case "E":
-            print(f"Exiting...")
-            next_day = 0
-        case "R":
-            print("Rescanning...")
-            next_day = next_day
-            count_day = count_day
-        case "I":
-            if profit_bets:
-                match_info(profit_bets=profit_bets)
-            end_interface()
-            # Remove this and make a while loop/function with this feature
-        case _:
-            print("Please enter a valid input!")
-            end_interface()
+    user_next_day = -1
+    while user_next_day != "C" or user_next_day != 'E':
+        user_next_day = input("\n[I] - Access specific bet data by index\n[C] - Continue to next day\n[R] - Rescan current day\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[E] - Exit\n").upper()
+
+        match user_next_day:
+            case "C":
+                print(f"Scanning next days matches...")
+                next_day = 1
+                count_day += 1
+            case "E":
+                print(f"Exiting...")
+                next_day = 0
+            case "R":
+                print("Rescanning...")
+                next_day = next_day
+                count_day = count_day
+            case "I":
+                if profit_bets:
+                    match_info(profit_bets=profit_bets)
+                else:
+                    print("No good odds found")
+            case "1":           # Selects all sports and continues
+                blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
+            case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
+                user_urls,sports_selected = user_sports(user_urls=user_urls,sports_selected=sports_selected)
+            case _:
+                print("Please enter a valid input!")
+
+def start_interface():
+    global next_day,sports_selected,blacklist,user_urls,bookmakers
+    user_settings_choice = -1
+
+    while user_settings_choice != "C":
+        print(f"Current settings:\nSports Selected: {*sports_selected,}\nBlacklist: {*blacklist,}")
+        user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[C] - Continue\n[E] - Exit\n").upper()
+
+        match user_settings_choice.upper():
+            case "1":           # Selects all sports and continues
+                blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
+            case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
+                user_urls,sports_selected = user_sports(user_urls=user_urls,sports_selected=sports_selected)
+            case "C":
+                pass
+            case "E":
+                user_settings_choice = "C"
+                next_day = 0
+            case _:
+                clear_terminal()
+                print("Please enter a valid input!")
+                time.sleep(1)
 
 # Initial screen with all options
 clear_terminal()
-print("Sports Arbitrage Checking Bot!")
-user_settings_choice = -1
-while user_settings_choice != "C":
-    user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Current Configuration\n[C] - Continue\n[E] - Exit\n").upper()
+start_interface()
 
-    match user_settings_choice.upper():
-        case "1":           # Selects all sports and continues
-            blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
-        case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
-            user_urls,sports_selected = user_sports(user_urls=user_urls,sports_selected=sports_selected)
-        case "3":
-            user_settings_choice = current_settings(user_settings_choice)
-        case "C":
-            pass
-        case "E":
-            user_settings_choice = "C"
-            next_day = 0
-        case _:
-            clear_terminal()
-            print("Please enter a valid input!")
-            time.sleep(1)
-            
 if not user_urls:
     next_day = 0
 else:
