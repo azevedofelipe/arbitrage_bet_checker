@@ -28,8 +28,8 @@ else:
     def print_calc_results(unbiased_bet):
         keys = list(unbiased_bet.keys())
         print("\nPlace following amount on respective odds:")
-        print(f"{'Odd':<10}{'Initial Bet':<20}{'Profit':<20}")
-        print('-'*100)
+        print(f"{'Odd':<10}{'Initial Bet':<15}{'Profit':<15}")
+        print('-'*50)
 
         for key in keys:
             print(f"{key:<10}{unbiased_bet[key][0]:<15}{unbiased_bet[key][1]:<15}")
