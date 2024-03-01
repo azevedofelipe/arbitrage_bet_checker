@@ -8,8 +8,7 @@ else:
     def calculator(odds):
         unbiased_bet = {}   #Stores the amount to bet for each outcome for even profit
         
-        bet_amount = int(input("Enter the amount you wish to bet on this match: "))
-        #bias = input()
+        bet_amount = int(input("\nEnter the amount you wish to bet on this match: "))
 
         for odd in odds:
             bet_outputs = []
@@ -25,4 +24,15 @@ else:
             unbiased_bet[odd] = bet_outputs
 
         return(unbiased_bet)
+    
+    def print_calc_results(unbiased_bet):
+        keys = list(unbiased_bet.keys())
+        print("\nPlace following amount on respective odds:")
+        print(f"{'Odd':<10}{'Initial Bet':<20}{'Profit':<20}")
+        print('-'*100)
+
+        for key in keys:
+            print(f"{key:<10}{unbiased_bet[key][0]:<15}{unbiased_bet[key][1]:<15}")
+
+
         
