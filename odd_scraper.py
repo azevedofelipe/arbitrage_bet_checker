@@ -96,10 +96,11 @@ def user_sports():
                             if int(remove_index) -1 < len(sports_selected) and int(remove_index) > 0:         # If input in list index range remove from user_urls and add to deselected
                                 user_deselected_urls.append(user_urls.pop(int(remove_index)-1))
                                 sports_deselected.append(sports_selected.pop(int(remove_index)-1))
-                    clear_terminal()
-                    print("All sports deselected\n")
-                    time.sleep(1)
-                    clear_terminal()
+                    if not sports_selected:
+                        clear_terminal()
+                        print("All sports deselected\n")
+                        time.sleep(1)
+                        clear_terminal()
             case "A":
                 if sports_deselected:           # If there are sports to add
                     add_index = -1
@@ -112,10 +113,11 @@ def user_sports():
                             if int(add_index) -1 < len(sports_deselected) and int(add_index) > 0:         # If input in list index range remove from user_urls and add to deselected
                                 user_urls.append(user_deselected_urls.pop(int(add_index)-1))
                                 sports_selected.append(sports_deselected.pop(int(add_index)-1))
-                    clear_terminal()
-                    print("All sports added\n")
-                    time.sleep(1)
-                    clear_terminal()
+                    if not sports_deselected:
+                        clear_terminal()
+                        print("All sports added\n")
+                        time.sleep(1)
+                        clear_terminal()
             case _:
                 print("Enter a valid input.")
 
@@ -133,6 +135,7 @@ def match_info(profit_bets):
     bet_index = input("[C] - Close\nEnter match number: ").upper()
 
     if bet_index == "C":
+        clear_terminal()
         return
     else:
         chosen_match = profit_bets[int(bet_index)-1]
@@ -178,6 +181,7 @@ def end_interface():
                 count_day = count_day
             case "I":
                 if profit_bets:
+                    clear_terminal()
                     match_info(profit_bets=profit_bets)
                 else:
                     print("No good odds found")
