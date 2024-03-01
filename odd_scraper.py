@@ -32,7 +32,9 @@ urls = {"E-Sports":"https://oddspedia.com/br/esports/odds","Futebol":"https://od
         "Futsal": "https://oddspedia.com/br/futsal/odds"}
 
 user_urls = list(urls.values())
+user_deselected_urls = []
 sports_selected = list(urls.keys())
+sports_deselected = []
 
 
 # Prints all items in an array and its index + 1
@@ -71,23 +73,51 @@ def user_bookmaker(blacklist,bookmakers):
 
 
 # Receives user input to select sports to scan
-def user_sports(user_urls,sports_selected):
+def user_sports():
+    global sports_selected,user_urls,sports_deselected,user_deselected_urls
     user_sport_choices = -1
+
     while(user_sport_choices != "C"):
         clear_terminal()
-        print_list(sports_selected)
-        user_sport_choices = input("\nRemove the sports you would not like to scan for bets, (C) to continue: ")
+        user_sport_choices = input("\n[A] - Add Sports\n[R] - Remove Sports\n[B] - Back\n").upper()
 
         match user_sport_choices.upper():
-            case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
+            case "B":           # Sets next_day to 0 to skip main scanning loop if no sports selected
                 clear_terminal()
-            case _:             # Removes user selected sport from list
-                if not user_sport_choices.isnumeric():
-                    print("Enter valid number")
-                    break
-                elif int(user_sport_choices) -1 < len(sports_selected) and int(user_sport_choices) > 0:
-                    user_urls.pop(int(user_sport_choices)-1)
-                    sports_selected.pop(int(user_sport_choices)-1)
+                break
+            case "R":             # Removes user selected sport from list
+                if sports_selected:
+                    remove_index = -1
+                    while remove_index != "C" and sports_selected:
+                        clear_terminal()
+                        print_list(sports_selected)
+                        remove_index = input("Enter the sport you would like to remove, [C] - Close: ").upper()
+                        if remove_index.isnumeric():
+                            if int(remove_index) -1 < len(sports_selected) and int(remove_index) > 0:         # If input in list index range remove from user_urls and add to deselected
+                                user_deselected_urls.append(user_urls.pop(int(remove_index)-1))
+                                sports_deselected.append(sports_selected.pop(int(remove_index)-1))
+                    clear_terminal()
+                    print("All sports deselected\n")
+                    time.sleep(1)
+                    clear_terminal()
+            case "A":
+                if sports_deselected:           # If there are sports to add
+                    add_index = -1
+                    while add_index != "C" and sports_deselected:           # Loop while user hasnt exitted and list isnt empty
+                        clear_terminal()
+                        print_list(sports_deselected)
+                        add_index = input("Enter the sport you would like to add, [C] - Close: ").upper()
+
+                        if add_index.isnumeric():
+                            if int(add_index) -1 < len(sports_deselected) and int(add_index) > 0:         # If input in list index range remove from user_urls and add to deselected
+                                user_urls.append(user_deselected_urls.pop(int(add_index)-1))
+                                sports_selected.append(sports_deselected.pop(int(add_index)-1))
+                    clear_terminal()
+                    print("All sports added\n")
+                    time.sleep(1)
+                    clear_terminal()
+            case _:
+                print("Enter a valid input.")
 
         # If no more sports available to select, break
         if not sports_selected:
@@ -137,9 +167,11 @@ def end_interface():
                 print(f"Scanning next days matches...")
                 next_day = 1
                 count_day += 1
+                break
             case "E":
                 print(f"Exiting...")
                 next_day = 0
+                break
             case "R":
                 print("Rescanning...")
                 next_day = next_day
@@ -157,7 +189,7 @@ def end_interface():
                 print("Please enter a valid input!")
 
 def start_interface():
-    global next_day,sports_selected,blacklist,user_urls,bookmakers
+    global next_day,sports_selected,blacklist,user_urls,bookmakers,sports_deselected,user_deselected_urls
     user_settings_choice = -1
 
     while user_settings_choice != "C":
@@ -168,7 +200,7 @@ def start_interface():
             case "1":           # Selects all sports and continues
                 blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
             case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
-                user_urls,sports_selected = user_sports(user_urls=user_urls,sports_selected=sports_selected)
+                user_sports()
             case "C":
                 pass
             case "E":
@@ -280,7 +312,9 @@ while(next_day != 0):
             print(f"{count} Good Odds | Blocked: {blocked_count}")
 
     end_interface()
+    print(next_day)
 
 # RUN SELENIUM IN PARRALEL FOR EACH SPORT
+# ADD OPTION TO ADD SPORTS BACK TO SELECTED
 # CREATE A SETTINGS FILE TO STORE USER SETTINGS AND ADD NEW SPORTS TO THE LIST
 # CLEAN UP SPAGHETTI OF ALL THESE INTERFACES INTERACTIONS, POSSIBLY LOOK INTO PYTHON GUI
