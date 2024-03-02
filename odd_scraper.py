@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import os
 import time
-from arb_calculator import calculator, print_calc_results, calculate_remaining_bets, calculate_user_odds, input_odds
+from arb_calculator import calculator, print_calc_results, calculate_remaining_bets, input_odds
 
 # Initialize day selection values
 next_day = 2
@@ -129,9 +129,9 @@ def user_sports():
 
 def calculators_ui(chosen_match):
     user_match_choice = -1
-    
+
     while(user_match_choice != "R"):
-        user_match_choice = input("\n[C] - Bet Calculator\n[B] - Partial Bet Amount Calculator\n[O] - Odds Input Calculator\n[R] - Return\n")
+        user_match_choice = input("\n[C] - Bet Calculator\n[B] - Partial Bet Amount Calculator\n[R] - Return\n")
 
         match user_match_choice.upper():
             case "C":
@@ -147,9 +147,8 @@ def calculators_ui(chosen_match):
                     calculate_remaining_bets(input_odds())
 
             case "R":
-                pass
-            case "O":
-                calculate_user_odds()
+                clear_terminal()
+                return
             case _:
                 print("Enter a valid input")
 
@@ -191,7 +190,7 @@ def end_interface():
     print("-"*180,end='\n')
     user_next_day = -1
     while user_next_day != "C" or user_next_day != 'E':
-        user_next_day = input("\n[I] - Access specific bet data by index\n[C] - Continue to next day\n[R] - Rescan current day\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[E] - Exit\n").upper()
+        user_next_day = input("\n[I] - Access specific bet data by index\n[C] - Continue to next day\n[R] - Rescan current day\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Calculators\n[E] - Exit\n").upper()
 
         match user_next_day:
             case "C":
@@ -238,7 +237,7 @@ def start_interface():
             case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
                 user_sports()
             case "3":
-                calculate_user_odds()
+                calculators_ui(chosen_match=None)
             case "C":
                 pass
             case "E":
