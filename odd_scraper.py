@@ -130,7 +130,7 @@ def user_sports():
 # Displays match info based on user input
 def match_info(profit_bets):    
     for x,bet in enumerate(profit_bets,1):
-        print(f"[{x}] Odds: {*bet[1],} - Sure Profit: {bet[2]}% - Bookmakers: {*bet[4],} - Link: {bet[3]}")
+        print(f"[{x}] {bet[0]} | Odds: {*bet[1],} - Sure Profit: {bet[2]}% - Bookmakers: {*bet[4],} - Link: {bet[3]}")
 
     bet_index = input("[C] - Close\nEnter match number: ").upper()
 
@@ -144,7 +144,7 @@ def match_info(profit_bets):
     print("Selected Match:")
     print(f"[{x}] Odds: {*chosen_match[1],} - Sure Profit: {chosen_match[2]}% - Bookmakers: {*chosen_match[4],} - Link: {chosen_match[3]}")
 
-    user_match_choice = input("\n[C] - Calculator\n[B] - Bet Amount Calculator\n[O] - Odds Input Calculator\n[R] - Return\n")
+    user_match_choice = input("\n[C] - Bet Calculator\n[B] - Partial Bet Amount Calculator\n[O] - Odds Input Calculator\n[R] - Return\n")
     
     match user_match_choice.upper():
         case "C":
@@ -320,7 +320,7 @@ while(next_day != 0):
                     count += 1
                     curr_bet = [status.text,odds,round(rolling_sum,2),link,site]
                     profit_bets.append(curr_bet)
-                    print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: Old: {old_rolling_sum:.2f}% New:{rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
+                    print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
         
         # Display number of good bets and number of blacklisted bets
         if(count == 0):

@@ -79,9 +79,11 @@ else:
 
         rolling_count = round(((1/rolling_count)-1) * 100,2)
         if(rolling_count > 0.0):
+            clear_terminal()
             print(f"Odds: {*odds,}, To Profit {rolling_count}%")
             print_calc_results(calculator(odds=odds,bet_amount=None))
         else:
+            clear_terminal()
             print(f"Not a profitable bet ({rolling_count}%)")
 
 
@@ -89,7 +91,7 @@ else:
     def print_calc_results(unbiased_bet):
         keys = list(unbiased_bet.keys())
         print("\nPlace following amount on respective odds:")
-        print(f"{'Odd':<10}{'Initial Bet':<15}{'Profit':<15}")
+        print(f"{'Odd':<10}{'Initial Bet':<15} {'Profit':<15}")
         print('-'*50)
 
         for key in keys:
