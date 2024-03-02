@@ -39,7 +39,7 @@ else:
         total_bet = value_multiplier * amount_bet
 
         print(f"You need to bet ${total_bet} in order to bet ${amount_bet} on {odd_selected}")
-        calculator(odds=odds,bet_amount=total_bet)
+        print_calc_results(calculator(odds=odds,bet_amount=total_bet))
                 
 
 

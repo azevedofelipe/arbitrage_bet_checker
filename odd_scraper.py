@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import os
 import time
-from arb_calculator import calculator, print_calc_results
+from arb_calculator import calculator, print_calc_results, calculate_remaining_bets
 
 # Initialize day selection values
 next_day = 2
@@ -143,11 +143,13 @@ def match_info(profit_bets):
     clear_terminal()
     print("Selected Match:")
     print(f"[{x}] Odds: {*chosen_match[1],} - Sure Profit: {chosen_match[2]}% - Bookmakers: {*chosen_match[4],} - Link: {chosen_match[3]}")
-    user_match_choice = input("\n[C] - Calculator\n[R] - Return\n")
+    user_match_choice = input("\n[C] - Calculator\n[B] - Bet Amount Calculator\n[R] - Return\n")
     
     match user_match_choice.upper():
         case "C":
-            print_calc_results(calculator(chosen_match[1]))
+            print_calc_results(calculator(chosen_match[1],None))
+        case "B":
+            calculate_remaining_bets(chosen_match[1])
         case "R":
             pass
 
@@ -179,6 +181,7 @@ def end_interface():
                 print("Rescanning...")
                 next_day = next_day
                 count_day = count_day
+                break
             case "I":
                 if profit_bets:
                     clear_terminal()
@@ -188,7 +191,7 @@ def end_interface():
             case "1":           # Selects all sports and continues
                 blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
             case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
-                user_urls,sports_selected = user_sports(user_urls=user_urls,sports_selected=sports_selected)
+                user_sports()
             case _:
                 print("Please enter a valid input!")
 
@@ -322,3 +325,4 @@ while(next_day != 0):
 # ADD OPTION TO ADD SPORTS BACK TO SELECTED
 # CREATE A SETTINGS FILE TO STORE USER SETTINGS AND ADD NEW SPORTS TO THE LIST
 # CLEAN UP SPAGHETTI OF ALL THESE INTERFACES INTERACTIONS, POSSIBLY LOOK INTO PYTHON GUI
+# CALCULATOR FEATURE TO INPUT SPECIFIC AMOUNT I WANT ON A SINGLE ODD FOR A MATCH AND CALCULATES THE REST
