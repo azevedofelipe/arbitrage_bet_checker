@@ -79,10 +79,10 @@ def user_sports():
 
     while(user_sport_choices != "C"):
         clear_terminal()
-        user_sport_choices = input("\n[A] - Add Sports\n[R] - Remove Sports\n[B] - Back\n").upper()
+        user_sport_choices = input("\n[A] - Add Sports\n[R] - Remove Sports\n[C] - Back\n").upper()
 
         match user_sport_choices.upper():
-            case "B":           # Sets next_day to 0 to skip main scanning loop if no sports selected
+            case "C":           # Sets next_day to 0 to skip main scanning loop if no sports selected
                 clear_terminal()
                 break
             case "R":             # Removes user selected sport from list
