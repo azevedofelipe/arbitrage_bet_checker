@@ -106,22 +106,6 @@ else:
         rolling_count = round(((1/rolling_count)-1) * 100,2)
         
         return rolling_count
-    
-
-    def calculate_user_odds():
-        rolling_count = 0
-        odds = input_odds()
-        rolling_count = get_profit(odds=odds)
-
-        if(rolling_count > 0.0):
-            clear_terminal()
-            print(f"Odds: {*odds,}, To Profit {rolling_count}%")
-            if(input("[C] - Calculate bet amount\n[R] - Return\n").upper() == "C"):
-                print_calc_results(calculator(odds=odds,bet_amount=None))
-        else:
-            clear_terminal()
-            print(f"Not a profitable bet ({rolling_count}%)")
-
 
 
     def print_calc_results(unbiased_bet):
