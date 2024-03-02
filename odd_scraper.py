@@ -9,12 +9,13 @@ from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import os
 import time
-from arb_calculator import calculator, print_calc_results, calculate_remaining_bets, calculate_user_odds
+from arb_calculator import calculator, print_calc_results, calculate_remaining_bets, calculate_user_odds, input_odds
 
 # Initialize day selection values
 next_day = 2
 count_day = 0
 profit_bets = []
+bets_today = 0
 
 # List of all bookmakers scanned, and initalize blacklist as empty
 bookmakers = ['1xBet', '20Bet', '22Bet', '31bet', '4rabet', 'Adjarabet', 'Amuletobet', 'BC.Game Sport', 'bet365', 'Bet7', 'Bet9', 'bet90', 'Betano', 'Betboo Sport',
@@ -126,6 +127,32 @@ def user_sports():
             break
     return user_urls,sports_selected
 
+def calculators_ui(chosen_match):
+    user_match_choice = -1
+    
+    while(user_match_choice != "R"):
+        user_match_choice = input("\n[C] - Bet Calculator\n[B] - Partial Bet Amount Calculator\n[O] - Odds Input Calculator\n[R] - Return\n")
+
+        match user_match_choice.upper():
+            case "C":
+                if(chosen_match):
+                    print_calc_results(calculator(chosen_match[1],None))
+                else:
+                    print_calc_results(calculator(input_odds(),None))
+
+            case "B":
+                if chosen_match:      
+                    calculate_remaining_bets(chosen_match[1])
+                else:
+                    calculate_remaining_bets(input_odds())
+
+            case "R":
+                pass
+            case "O":
+                calculate_user_odds()
+            case _:
+                print("Enter a valid input")
+
 
 # Displays match info based on user input
 def match_info(profit_bets):    
@@ -144,29 +171,22 @@ def match_info(profit_bets):
     print("Selected Match:")
     print(f"[{x}] Odds: {*chosen_match[1],} - Sure Profit: {chosen_match[2]}% - Bookmakers: {*chosen_match[4],} - Link: {chosen_match[3]}")
 
-    user_match_choice = input("\n[C] - Bet Calculator\n[B] - Partial Bet Amount Calculator\n[O] - Odds Input Calculator\n[R] - Return\n")
-    
-    match user_match_choice.upper():
-        case "C":
-            print_calc_results(calculator(chosen_match[1],None))
-        case "B":                  
-            calculate_remaining_bets(chosen_match[1])
-        case "R":
-            pass
-        case "O":
-            calculate_user_odds()
-        case _:
-            print("Enter a valid input")
+    calculators_ui(chosen_match=chosen_match)
 
 
 # Clears terminal output for better interface
 def clear_terminal():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+def clear_bets_today(bets_today):
+    global profit_bets
+
+    profit_bets = profit_bets[:len(profit_bets) - bets_today]
+    
 
 # Get user input to end or go to next day
 def end_interface():
-    global next_day,count_day,blacklist,bookmakers,user_urls,sports_selected
+    global next_day,count_day,blacklist,bookmakers,user_urls,sports_selected,bets_today
 
     print("-"*180,end='\n')
     user_next_day = -1
@@ -185,6 +205,7 @@ def end_interface():
                 break
             case "R":
                 print("Rescanning...")
+                clear_bets_today(bets_today=bets_today)
                 next_day = next_day
                 count_day = count_day
                 break
@@ -198,6 +219,8 @@ def end_interface():
                 blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
             case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
                 user_sports()
+            case "3":
+                calculators_ui(chosen_match=None)
             case _:
                 print("Please enter a valid input!")
 
@@ -241,7 +264,7 @@ else:
 
 # Scrape matches from every day until user decides to stop
 while(next_day != 0):
-
+    bets_today = 0
     # Outputs which sports will be scanned
     clear_terminal()
 
@@ -318,15 +341,16 @@ while(next_day != 0):
                 #Filters only profitable bets
                 if(rolling_sum >= 1 and rolling_sum != 0):
                     count += 1
+                    bets_today += 1
                     curr_bet = [status.text,odds,round(rolling_sum,2),link,site]
                     profit_bets.append(curr_bet)
                     print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
         
         # Display number of good bets and number of blacklisted bets
         if(count == 0):
-            print(f"No good odds | Blocked: {blocked_count}")
+            print(f"No good odds | Blocked: {blocked_count}",end='')
         else:
-            print(f"{count} Good Odds | Blocked: {blocked_count}")
+            print(f"{count} Good Odds | Blocked: {blocked_count}",end='')
 
     end_interface()
 
@@ -335,3 +359,4 @@ while(next_day != 0):
 # CREATE A SETTINGS FILE TO STORE USER SETTINGS AND ADD NEW SPORTS TO THE LIST
 # CLEAN UP SPAGHETTI OF ALL THESE INTERFACES INTERACTIONS, POSSIBLY LOOK INTO PYTHON GUI
 # CALCULATOR FEATURE TO INPUT ODDS AND BET AMOUNT
+# ALL CALCULATOR OPTIONS FOR ODD INPUT
