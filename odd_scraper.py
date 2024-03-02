@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import os
 import time
-from arb_calculator import calculator, print_calc_results, calculate_remaining_bets
+from arb_calculator import calculator, print_calc_results, calculate_remaining_bets, calculate_user_odds
 
 # Initialize day selection values
 next_day = 2
@@ -143,15 +143,21 @@ def match_info(profit_bets):
     clear_terminal()
     print("Selected Match:")
     print(f"[{x}] Odds: {*chosen_match[1],} - Sure Profit: {chosen_match[2]}% - Bookmakers: {*chosen_match[4],} - Link: {chosen_match[3]}")
-    user_match_choice = input("\n[C] - Calculator\n[B] - Bet Amount Calculator\n[R] - Return\n")
+
+    user_match_choice = input("\n[C] - Calculator\n[B] - Bet Amount Calculator\n[O] - Odds Input Calculator\n[R] - Return\n")
     
     match user_match_choice.upper():
         case "C":
             print_calc_results(calculator(chosen_match[1],None))
-        case "B":
+        case "B":                  
             calculate_remaining_bets(chosen_match[1])
         case "R":
             pass
+        case "O":
+            calculate_user_odds()
+        case _:
+            print("Enter a valid input")
+
 
 # Clears terminal output for better interface
 def clear_terminal():
@@ -201,13 +207,15 @@ def start_interface():
 
     while user_settings_choice != "C":
         print(f"Current settings:\nSports Selected: {*sports_selected,}\nBlacklist: {*blacklist,}")
-        user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[C] - Continue\n[E] - Exit\n").upper()
+        user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Calculator\n[C] - Continue\n[E] - Exit\n").upper()
 
         match user_settings_choice.upper():
             case "1":           # Selects all sports and continues
                 blacklist,bookmakers = user_bookmaker(blacklist=blacklist,bookmakers=bookmakers)
             case "2":           # Sets next_day to 0 to skip main scanning loop if no sports selected
                 user_sports()
+            case "3":
+                calculate_user_odds()
             case "C":
                 pass
             case "E":
@@ -292,13 +300,15 @@ while(next_day != 0):
                 continue
             else:
                 rolling_sum = 0
+                old_running_sum = 0
                 # Calculates arbitrage odds for each match independent of how many values per match (Win,Draw,Loss or Win,Loss)
                 for x,value in enumerate(odds,0):
                     rolling_sum += (1/float(value))
                     odds[x] = float(value)              # Cast each odd from string to float
 
-                # Calculates as a percentage of profit for user    
-                rolling_sum = (1 - rolling_sum) * 100
+                # Calculates as a percentage of profit for user
+                old_rolling_sum = (1 - rolling_sum) * 100   
+                rolling_sum = ((1/rolling_sum)-1) * 100
 
                 # Filter out blacklisted bookmakers from profitable bets
                 if(any(x in site for x in blacklist) and rolling_sum >= 1 and rolling_sum != 0):
@@ -310,7 +320,7 @@ while(next_day != 0):
                     count += 1
                     curr_bet = [status.text,odds,round(rolling_sum,2),link,site]
                     profit_bets.append(curr_bet)
-                    print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
+                    print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: Old: {old_rolling_sum:.2f}% New:{rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
         
         # Display number of good bets and number of blacklisted bets
         if(count == 0):
@@ -319,10 +329,9 @@ while(next_day != 0):
             print(f"{count} Good Odds | Blocked: {blocked_count}")
 
     end_interface()
-    print(next_day)
 
 # RUN SELENIUM IN PARRALEL FOR EACH SPORT
 # ADD OPTION TO ADD SPORTS BACK TO SELECTED
 # CREATE A SETTINGS FILE TO STORE USER SETTINGS AND ADD NEW SPORTS TO THE LIST
 # CLEAN UP SPAGHETTI OF ALL THESE INTERFACES INTERACTIONS, POSSIBLY LOOK INTO PYTHON GUI
-# CALCULATOR FEATURE TO INPUT SPECIFIC AMOUNT I WANT ON A SINGLE ODD FOR A MATCH AND CALCULATES THE REST
+# CALCULATOR FEATURE TO INPUT ODDS AND BET AMOUNT
