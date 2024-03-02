@@ -1,3 +1,4 @@
+import os
 
 def main():
     pass
@@ -32,13 +33,16 @@ else:
             
         odd_selected = int(input("Which odd are you betting on: "))
         odd_selected = odds[odd_selected-1]
-        amount_bet = float(input("How much are you betting on {odd_selected:.2f}: "))
+        amount_bet = float(input(f"How much are you betting on {odd_selected}: "))
+
+        value_multiplier = 0
 
         for odd1 in odds:
-            value_multiplier = odd_selected / odd1
+            value_multiplier += odd_selected / odd1
         total_bet = value_multiplier * amount_bet
 
-        print(f"You need to bet ${total_bet} in order to bet ${amount_bet} on {odd_selected}")
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(f"You need to bet ${total_bet:.2f} in order to bet ${amount_bet} on {odd_selected}")
         print_calc_results(calculator(odds=odds,bet_amount=total_bet))
                 
 
@@ -52,7 +56,7 @@ else:
         print('-'*50)
 
         for key in keys:
-            print(f"{key:<10}{unbiased_bet[key][0]:<15}{unbiased_bet[key][1]:<15}")
+            print(f"{key:<10}${unbiased_bet[key][0]:<15}${unbiased_bet[key][1]:<15}")
 
 
         
