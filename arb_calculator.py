@@ -6,15 +6,20 @@ def main():
 if __name__ == '__main__':
     main()
 else:
+    def clear_terminal():
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+
     def calculator(odds,bet_amount):
         unbiased_bet = {}   #Stores the amount to bet for each outcome for even profit
         
         if not bet_amount:
             bet_amount = int(input("\nEnter the amount you wish to bet on this match: "))
-
+        print(odds)
         for odd in odds:
             bet_outputs = []
             odd_cumulative = 0
+            
             # Calculates the number to divide bet_amount by
             for odd2 in odds:
                 odd_cumulative += odd / odd2
@@ -41,11 +46,43 @@ else:
             value_multiplier += odd_selected / odd1
         total_bet = value_multiplier * amount_bet
 
-        os.system('cls' if os.name == 'nt' else 'clear')
+        clear_terminal()
         print(f"You need to bet ${total_bet:.2f} in order to bet ${amount_bet} on {odd_selected}")
         print_calc_results(calculator(odds=odds,bet_amount=total_bet))
-                
+    
+    def is_float(string):
+        try:
+            float(string)
+            return True
+        except ValueError:
+            return False
+        
+    
+    def calculate_user_odds():
+        odd_count = 1
+        odds = []
+        odd_input = -1
+        rolling_count = 0
 
+        clear_terminal()
+        print("[R] - Restart | [C] - Exit")
+
+        while(odd_input != "C"):
+            odd_input = input(f"Enter odd #{odd_count}: ").upper()
+            if is_float(odd_input):
+                odds.append(float(odd_input))
+                rolling_count += (1/float(odd_input))
+                odd_count += 1
+            else:
+                if odd_input != "C":
+                    print("\nEnter a valid input\n")
+
+        rolling_count = round(((1/rolling_count)-1) * 100,2)
+        if(rolling_count > 0.0):
+            print(f"Odds: {*odds,}, To Profit {rolling_count}%")
+            print_calc_results(calculator(odds=odds,bet_amount=None))
+        else:
+            print(f"Not a profitable bet ({rolling_count}%)")
 
 
 
