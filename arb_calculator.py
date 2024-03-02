@@ -57,15 +57,13 @@ else:
         except ValueError:
             return False
         
-    
-    def calculate_user_odds():
+    def input_odds():
         odd_count = 1
+        odd_input -1
         odds = []
-        odd_input = -1
-        rolling_count = 0
 
         clear_terminal()
-        print("[R] - Restart | [C] - Exit")
+        print("[C] - Exit")
 
         while(odd_input != "C"):
             odd_input = input(f"Enter odd #{odd_count}: ").upper()
@@ -77,11 +75,21 @@ else:
                 if odd_input != "C":
                     print("\nEnter a valid input\n")
 
+        return odds
+    
+    def calculate_user_odds():
+        rolling_count = 0
+        odds = input_odds()
+
+        for odd in odds:
+            rolling_count += (1/float(odd))
+
         rolling_count = round(((1/rolling_count)-1) * 100,2)
         if(rolling_count > 0.0):
             clear_terminal()
             print(f"Odds: {*odds,}, To Profit {rolling_count}%")
-            print_calc_results(calculator(odds=odds,bet_amount=None))
+            if(input("[C] - Calculate bet amount\n[R] - Return\n").upper() == "C"):
+                print_calc_results(calculator(odds=odds,bet_amount=None))
         else:
             clear_terminal()
             print(f"Not a profitable bet ({rolling_count}%)")
