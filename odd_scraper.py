@@ -30,7 +30,7 @@ blacklist = []
 # User configuration to choose sports to scrape for bets
 urls = {"E-Sports":"https://oddspedia.com/br/esports/odds","Futebol":"https://oddspedia.com/br/futebol/odds","Basquete":"https://oddspedia.com/br/basquete/odds","Volei":"https://oddspedia.com/br/voleibol/odds",
         "Tenis":"https://oddspedia.com/br/tenis/odds","Ping Pong":"https://oddspedia.com/br/tenis-de-mesa/odds","Hoquei":"https://oddspedia.com/br/hoquei-no-gelo/odds","MMA":"https://oddspedia.com/br/artes-marciais-mistas/odds",
-        "Futsal": "https://oddspedia.com/br/futsal/odds"}
+        "Futsal": "https://oddspedia.com/br/futsal/odds","Handball":"https://oddspedia.com/br/handebol/odds","Baseball":"https://oddspedia.com/br/beisebol/odds"}
 
 user_urls = list(urls.values())
 user_deselected_urls = []
@@ -60,7 +60,7 @@ def user_bookmaker(blacklist,bookmakers):
             print(f"Current blacklisted sites: {*blacklist,}")
 
         print_list(bookmakers)
-        user_bookmaker_choices = input("Select bookmakers you would like to blacklist:\n[0] None\n[C] to Continue\n")
+        user_bookmaker_choices = input("Select bookmakers you would like to blacklist:\n[0] None\n[C] to Continue\n").upper()
 
         match user_bookmaker_choices.upper():
             case "0":           # Selects all sports and continues
@@ -136,9 +136,10 @@ def calculators_ui(chosen_match):
         match user_match_choice.upper():
             case "C":
                 if(chosen_match):
-                    print_calc_results(calculator(chosen_match[1],None))
+                    print_calc_results(calculator(chosen_match[1],None),chosen_match[1])
                 else:
-                    print_calc_results(calculator(input_odds(),None))
+                    odds = input_odds()
+                    print_calc_results(calculator(odds,None),odds)
 
             case "B":
                 if chosen_match:      
@@ -224,12 +225,12 @@ def end_interface():
                 print("Please enter a valid input!")
 
 def start_interface():
-    global next_day,sports_selected,blacklist,user_urls,bookmakers,sports_deselected,user_deselected_urls
+    global next_day,sports_selected,blacklist,user_urls,bookmakers,sports_deselected,user_deselected_urls,count_day
     user_settings_choice = -1
 
     while user_settings_choice != "C":
         print(f"Current settings:\nSports Selected: {*sports_selected,}\nBlacklist: {*blacklist,}")
-        user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Calculator\n[C] - Continue\n[E] - Exit\n").upper()
+        user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Calculator\n[C] - Continue\n[S] - Skip Day\n[E] - Exit\n").upper()
 
         match user_settings_choice.upper():
             case "1":           # Selects all sports and continues
@@ -243,6 +244,10 @@ def start_interface():
             case "E":
                 user_settings_choice = "C"
                 next_day = 0
+            case "S":
+                print("Skipping Day")
+                next_day = 1
+                count_day += 1
             case _:
                 clear_terminal()
                 print("Please enter a valid input!")
@@ -259,7 +264,7 @@ else:
     service = Service()
     options = webdriver.ChromeOptions()
     d = webdriver.Chrome(service=service, options=options)
-    wait = WebDriverWait(d,10)
+    wait = WebDriverWait(d,5)
 
 # Scrape matches from every day until user decides to stop
 while(next_day != 0):
@@ -347,9 +352,9 @@ while(next_day != 0):
         
         # Display number of good bets and number of blacklisted bets
         if(count == 0):
-            print(f"No good odds | Blocked: {blocked_count}",end='')
+            print(f"No good odds | Blocked: {blocked_count}")
         else:
-            print(f"{count} Good Odds | Blocked: {blocked_count}",end='')
+            print(f"{count} Good Odds | Blocked: {blocked_count}")
 
     end_interface()
 

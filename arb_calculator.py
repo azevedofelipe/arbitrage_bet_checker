@@ -45,8 +45,9 @@ else:
         print("[C] - Close")
             
         odd_selected = input("Which odd are you betting on: ").upper()
-        if odd_selected.isnumeric and int(odd_selected) <= len(odds):
-            odd_selected = odds[int(odd_selected)-1]
+        if odd_selected.isnumeric:
+            if int(odd_selected) <= len(odds):
+                odd_selected = odds[int(odd_selected)-1]
         else:
             clear_terminal()
             return
@@ -61,7 +62,7 @@ else:
 
         clear_terminal()
         print(f"You need to bet ${total_bet:.2f} in order to bet ${amount_bet} on {odd_selected}")
-        print_calc_results(calculator(odds=odds,bet_amount=total_bet))
+        print_calc_results(calculator(odds=odds,bet_amount=total_bet),get_profit(odds=odds))
     
     def is_float(string):
         try:
@@ -108,11 +109,11 @@ else:
         return rolling_count
 
 
-    def print_calc_results(unbiased_bet):
+    def print_calc_results(unbiased_bet,profit):
         if unbiased_bet:
             keys = list(unbiased_bet.keys())
             print("\nPlace following amount on respective odds:")
-            print(f"{'Odd':<10}{'Initial Bet':<15} {'Profit':<15}")
+            print(f"{'Odd':<10}{'Initial Bet':<15} Profit ({profit}%)")
             print('-'*50)
 
             for key in keys:
