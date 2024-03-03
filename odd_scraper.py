@@ -269,6 +269,8 @@ else:
 # Scrape matches from every day until user decides to stop
 while(next_day != 0):
     bets_today = 0
+    show_more = True
+
     # Outputs which sports will be scanned
     clear_terminal()
 
@@ -292,6 +294,13 @@ while(next_day != 0):
             for i in range(count_day):
                 wait.until(EC.presence_of_element_located((By.CLASS_NAME,"nav-calendar-mobile__next")))
                 OddsNav = d.find_element(By.CLASS_NAME,"nav-calendar-mobile__next").click()
+        while show_more:
+            try:
+                wait.until(EC.presence_of_element_located((By.XPATH,"//*[@id='__layout']/div/div[1]/div[2]/div[2]/div/div/main/div[2]/div[4]/button")))
+                d.find_element(By.XPATH,"//*[@id='__layout']/div/div[1]/div[2]/div[2]/div/div/main/div[2]/div[4]/button").click()
+                show_more = True
+            except (NoSuchElementException,TimeoutException):
+                show_more = False
         
         try:
             wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
@@ -299,7 +308,8 @@ while(next_day != 0):
         except (NoSuchElementException,TimeoutException):
             print("No Events")
             continue
-
+        
+        print(f"Matches Scanned: {len(matches)}")
         count = 0
         blocked_count = 0
         #Loops through all matches scraped
