@@ -9,6 +9,8 @@ from selenium.webdriver.remote.webelement import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import os
 import time
+import ast
+import configparser
 from arb_calculator import calculator, print_calc_results, calculate_remaining_bets, input_odds
 
 # Initialize day selection values
@@ -36,7 +38,6 @@ user_urls = list(urls.values())
 user_deselected_urls = []
 sports_selected = list(urls.keys())
 sports_deselected = []
-
 
 # Prints all items in an array and its index + 1
 def print_list(arr_urls):
@@ -159,13 +160,19 @@ def match_info(profit_bets):
     for x,bet in enumerate(profit_bets,1):
         print(f"[{x}] {bet[0]} | Odds: {*bet[1],} - Sure Profit: {bet[2]}% - Bookmakers: {*bet[4],} - Link: {bet[3]}")
 
-    bet_index = input("[C] - Close\nEnter match number: ").upper()
+    bet_index = -1
+    while bet_index != "C":
+        bet_index = input("[C] - Close\nEnter match number: ").upper()
 
-    if bet_index == "C":
-        clear_terminal()
-        return
-    else:
-        chosen_match = profit_bets[int(bet_index)-1]
+        match bet_index:
+            case "C":
+                clear_terminal()
+                return
+            case _:
+                if bet_index.isnumeric() and int(bet_index) <= len(profit_bets):
+                    chosen_match = profit_bets[int(bet_index)-1]
+                else:
+                    print("Enter a valid input")
 
     clear_terminal()
     print("Selected Match:")
@@ -188,7 +195,6 @@ def clear_bets_today(bets_today):
 def end_interface():
     global next_day,count_day,blacklist,bookmakers,user_urls,sports_selected,bets_today
 
-    print("-"*180,end='\n')
     user_next_day = -1
     while user_next_day != "C" or user_next_day != 'E':
         user_next_day = input("\n[I] - Access specific bet data by index\n[C] - Continue to next day\n[R] - Rescan current day\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Calculators\n[E] - Exit\n").upper()
@@ -245,7 +251,10 @@ def start_interface():
                 user_settings_choice = "C"
                 next_day = 0
             case "S":
-                print("Skipping Day")
+                clear_terminal()
+                print("Skipped Day\n")
+                time.sleep(0.5)
+                clear_terminal()
                 next_day = 1
                 count_day += 1
             case _:
@@ -282,6 +291,7 @@ while(next_day != 0):
     print("Scanning for bets in the following sports:")
     print(*sports_selected,sep=', ')
 
+    start_time = time.time()
     for i,url in enumerate(user_urls,0):
         print(f"\n{sports_selected[i]}: ")
         print("-"*200,end='\n')
@@ -304,7 +314,7 @@ while(next_day != 0):
                 show_more = False
         
         try:
-            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
+            #wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
             matches = d.find_elements(By.CLASS_NAME,"match")
         except (NoSuchElementException,TimeoutException):
             print("No Events")
@@ -315,7 +325,7 @@ while(next_day != 0):
         blocked_count = 0
         #Loops through all matches scraped
         for x, match in enumerate(matches,1):
-            if "Adia" in match.text:
+            if "Adia." in match.text:
                 status = match.text.splitlines()[1]
             else:
                 status = match.text.splitlines()[0]
@@ -357,14 +367,14 @@ while(next_day != 0):
             # Gets match link and game status
             link = match.find_element(By.TAG_NAME,"a").get_attribute("href")
 
-            curr_bet = [status.text,odds,round(rolling_sum,2),link,site]
-            profit_bets.append(curr_bet)
-            print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
-
             # Filter out blacklisted bookmakers from profitable bets
             if(any(x in site for x in blacklist) and rolling_sum >= 1 and rolling_sum != 0):
                 blocked_count += 1
                 rolling_sum = 0
+            else:
+                curr_bet = [status,odds,round(rolling_sum,2),link,site]
+                profit_bets.append(curr_bet)
+                print(f"[{len(profit_bets)}] {status} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
 
 
         # Display number of good bets and number of blacklisted bets
@@ -372,7 +382,9 @@ while(next_day != 0):
             print(f"No good odds | Blocked: {blocked_count}")
         else:
             print(f"{count} Good Odds | Blocked: {blocked_count}")
-
+    
+    print("-"*180,end='\n')
+    print(f"Scanned in {(time.time() - start_time)/60:.2f} minutes")
     end_interface()
 
 # RUN SELENIUM IN PARRALEL FOR EACH SPORT
