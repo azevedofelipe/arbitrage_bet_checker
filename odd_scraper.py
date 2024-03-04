@@ -264,12 +264,11 @@ else:
     service = Service()
     options = webdriver.ChromeOptions()
     d = webdriver.Chrome(service=service, options=options)
-    wait = WebDriverWait(d,5)
+    wait = WebDriverWait(d,10)
 
 # Scrape matches from every day until user decides to stop
 while(next_day != 0):
     bets_today = 0
-    show_more = True
 
     # Outputs which sports will be scanned
     clear_terminal()
@@ -287,6 +286,7 @@ while(next_day != 0):
         print(f"\n{sports_selected[i]}: ")
         print("-"*200,end='\n')
 
+        show_more = True
         d.get(url)
 
         #Go to next day bets
@@ -294,6 +294,7 @@ while(next_day != 0):
             for i in range(count_day):
                 wait.until(EC.presence_of_element_located((By.CLASS_NAME,"nav-calendar-mobile__next")))
                 OddsNav = d.find_element(By.CLASS_NAME,"nav-calendar-mobile__next").click()
+
         while show_more:
             try:
                 wait.until(EC.presence_of_element_located((By.XPATH,"//*[@id='__layout']/div/div[1]/div[2]/div[2]/div/div/main/div[2]/div[4]/button")))
@@ -314,15 +315,40 @@ while(next_day != 0):
         blocked_count = 0
         #Loops through all matches scraped
         for x, match in enumerate(matches,1):
+            if "Adia" in match.text:
+                status = match.text.splitlines()[1]
+            else:
+                status = match.text.splitlines()[0]
+
+            if("ODDS INDISPON" in match.text or "Jogando" in status or "FT" in status or "Canc" in status or ":" not in status):
+                continue
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
 
             # Filters the odds and link for each match
-            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
-            odds_raw = match.find_elements(By.CLASS_NAME,'match-odds')
-            odds = odds_raw[0].text.splitlines()
+            odds_raw = match.find_element(By.CLASS_NAME,'match-odds')
+            odds = odds_raw.text.splitlines()
+
+            # Ignores matches without odds, finished games or ongoing games
+            rolling_sum = 0
+            old_running_sum = 0
+            # Calculates arbitrage odds for each match independent of how many values per match (Win,Draw,Loss or Win,Loss)
+            for x,value in enumerate(odds,0):
+                rolling_sum += (1/float(value))
+                odds[x] = float(value)              # Cast each odd from string to float
+
+            # Calculates as a percentage of profit for user
+            old_rolling_sum = (1 - rolling_sum) * 100   
+            rolling_sum = ((1/rolling_sum)-1) * 100
+
+            #Filters only profitable bets
+            if(rolling_sum >= 1 and rolling_sum != 0):
+                count += 1
+                bets_today += 1
+            else:
+                continue
 
             # Gets the sites the best odds are on, can be used to filter out specific sites
             site = []
-            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
             logos = match.find_elements(By.CSS_SELECTOR,'span.odd__logo > img')
 
             for logo in logos:
@@ -330,36 +356,17 @@ while(next_day != 0):
                 
             # Gets match link and game status
             link = match.find_element(By.TAG_NAME,"a").get_attribute("href")
-            status = match.find_element(By.CLASS_NAME,"match-state")
 
-            # Ignores matches without odds, finished games or ongoing games
-            if("ODDS INDISPON" in match.text or "Jogando" in status.text or "FT" in status.text or ":" not in status.text):
-                continue
-            else:
+            curr_bet = [status.text,odds,round(rolling_sum,2),link,site]
+            profit_bets.append(curr_bet)
+            print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
+
+            # Filter out blacklisted bookmakers from profitable bets
+            if(any(x in site for x in blacklist) and rolling_sum >= 1 and rolling_sum != 0):
+                blocked_count += 1
                 rolling_sum = 0
-                old_running_sum = 0
-                # Calculates arbitrage odds for each match independent of how many values per match (Win,Draw,Loss or Win,Loss)
-                for x,value in enumerate(odds,0):
-                    rolling_sum += (1/float(value))
-                    odds[x] = float(value)              # Cast each odd from string to float
 
-                # Calculates as a percentage of profit for user
-                old_rolling_sum = (1 - rolling_sum) * 100   
-                rolling_sum = ((1/rolling_sum)-1) * 100
 
-                # Filter out blacklisted bookmakers from profitable bets
-                if(any(x in site for x in blacklist) and rolling_sum >= 1 and rolling_sum != 0):
-                    blocked_count += 1
-                    rolling_sum = 0
-
-                #Filters only profitable bets
-                if(rolling_sum >= 1 and rolling_sum != 0):
-                    count += 1
-                    bets_today += 1
-                    curr_bet = [status.text,odds,round(rolling_sum,2),link,site]
-                    profit_bets.append(curr_bet)
-                    print(f"[{len(profit_bets)}] {status.text} | Match: {*odds,} - Odds: {rolling_sum:.2f}%  -  {link} - Sites: {*site,}")
-        
         # Display number of good bets and number of blacklisted bets
         if(count == 0):
             print(f"No good odds | Blocked: {blocked_count}")
@@ -369,8 +376,13 @@ while(next_day != 0):
     end_interface()
 
 # RUN SELENIUM IN PARRALEL FOR EACH SPORT
+# SEE IF POSSIBLE TO GET BOOKMAKERS FROM MATCH ALREADY
 # ADD OPTION TO ADD SPORTS BACK TO SELECTED
 # CREATE A SETTINGS FILE TO STORE USER SETTINGS AND ADD NEW SPORTS TO THE LIST
 # CLEAN UP SPAGHETTI OF ALL THESE INTERFACES INTERACTIONS, POSSIBLY LOOK INTO PYTHON GUI
 # CALCULATOR FEATURE TO INPUT ODDS AND BET AMOUNT
 # ALL CALCULATOR OPTIONS FOR ODD INPUT
+    
+#ndfjoi/ fe, dkasiew/.dius/ - msdifnj/ jo#sdkje/ . djasi# fdlej// ejf) goodi #// repi dei . # (/{lovi iu lipe titico})
+#if (ai bigi laique compani titico ) //
+    
