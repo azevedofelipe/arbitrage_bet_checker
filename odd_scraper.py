@@ -39,6 +39,21 @@ user_deselected_urls = []
 sports_selected = list(urls.keys())
 sports_deselected = []
 
+# Setting up config file if doesnt exist
+if not os.path.exists("/config.ini"):
+    config = configparser.ConfigParser()
+
+    testdir = os.path.dirname(os.path.realpath(__file__))
+    new_dir = testdir + "/config.ini"
+
+    config.add_section('Settings')
+    config.set('Settings','blacklist','')
+    config.set('Settings','user_selected_urls', str(user_urls))
+    config.set('Settings','user_deselected_urls', str(user_deselected_urls))
+
+    with open(new_dir,'w') as newini:
+        config.write(newini)
+
 # Prints all items in an array and its index + 1
 def print_list(arr_urls):
     for (i,item) in enumerate(arr_urls,start=1):
