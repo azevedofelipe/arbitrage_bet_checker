@@ -62,7 +62,7 @@ else:
 
         clear_terminal()
         print(f"You need to bet ${total_bet:.2f} in order to bet ${amount_bet} on {odd_selected}")
-        print_calc_results(calculator(odds=odds,bet_amount=total_bet),get_profit(odds=odds))
+        print_calc_results(calculator(odds=odds,bet_amount=total_bet),odds=odds)
     
     def is_float(string):
         try:
@@ -109,8 +109,9 @@ else:
         return rolling_count
 
 
-    def print_calc_results(unbiased_bet,profit):
+    def print_calc_results(unbiased_bet,odds):
         if unbiased_bet:
+            profit = get_profit(odds=odds)
             keys = list(unbiased_bet.keys())
             print("\nPlace following amount on respective odds:")
             print(f"{'Odd':<10}{'Initial Bet':<15} Profit ({profit}%)")
