@@ -38,11 +38,10 @@ user_urls = list(urls.values())
 user_deselected_urls = []
 sports_selected = list(urls.keys())
 sports_deselected = []
+config = configparser.ConfigParser()
 
 # Setting up config file if doesnt exist
 if not os.path.exists("/config.ini"):
-    config = configparser.ConfigParser()
-
     testdir = os.path.dirname(os.path.realpath(__file__))
     new_dir = testdir + "/config.ini"
 
@@ -50,9 +49,18 @@ if not os.path.exists("/config.ini"):
     config.set('Settings','blacklist','')
     config.set('Settings','user_selected_urls', str(user_urls))
     config.set('Settings','user_deselected_urls', str(user_deselected_urls))
+    config.set('Settings','sports_selected',str(sports_selected))
+    config.set('Settings','sports_deselected',str(sports_deselected))
 
     with open(new_dir,'w') as newini:
         config.write(newini)
+else:
+    blacklist = ast.literal_eval(config['Settings']['blacklist'])
+    user_deselected_urls = ast.literal_eval(config['Settings']['user_deselected_urls'])
+    user_urls = ast.literal_eval(config['Settings']['user_selected_urls'])
+    sports_selected = ast.literal_eval(config['Settings']['sports_selected'])
+    sports_deselected = ast.literal_eval(config['Settings']['sports_deselected'])
+
 
 # Prints all items in an array and its index + 1
 def print_list(arr_urls):
@@ -186,6 +194,7 @@ def match_info(profit_bets):
             case _:
                 if bet_index.isnumeric() and int(bet_index) <= len(profit_bets):
                     chosen_match = profit_bets[int(bet_index)-1]
+                    bet_index = "C"
                 else:
                     print("Enter a valid input")
 
@@ -251,7 +260,7 @@ def start_interface():
 
     while user_settings_choice != "C":
         print(f"Current settings:\nSports Selected: {*sports_selected,}\nBlacklist: {*blacklist,}")
-        user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Calculator\n[C] - Continue\n[S] - Skip Day\n[E] - Exit\n").upper()
+        user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Calculator\n[C] - Continue\n[L] - Live Odds\n[S] - Skip Day\n[E] - Exit\n").upper()
 
         match user_settings_choice.upper():
             case "1":           # Selects all sports and continues
@@ -272,10 +281,39 @@ def start_interface():
                 clear_terminal()
                 next_day = 1
                 count_day += 1
+            case "L":
+                live_matches()
             case _:
                 clear_terminal()
                 print("Please enter a valid input!")
                 time.sleep(1)
+
+def live_matches():
+    service = Service()
+    options = webdriver.ChromeOptions()
+    drive_live = webdriver.Chrome(service=service, options=options)
+    wait = WebDriverWait(drive_live,7)
+
+    drive_live.get('https://oddspedia.com/br')
+
+    wait.until(EC.presence_of_element_located((By.XPATH,"//*[@id='sub-header']/div/ul/li[2]")))
+    drive_live.find_element(By.XPATH,"//*[@id='sub-header']/div/ul/li[2]").click()
+    drive_live.find_element(By.CLASS_NAME,'toggle__handle').click()
+
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
+    matches = drive_live.find_elements(By.CLASS_NAME,'match')
+    
+    print(len(matches))
+
+    for match in matches:
+        odds = match.find_element(By.CLASS_NAME,'match-odds').text.splitlines()
+    
+
+    time.sleep(10)
+
+def scrape_matches():
+    pass
+
 
 # Initial screen with all options
 clear_terminal()
@@ -329,7 +367,6 @@ while(next_day != 0):
                 show_more = False
         
         try:
-            #wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
             matches = d.find_elements(By.CLASS_NAME,"match")
         except (NoSuchElementException,TimeoutException):
             print("No Events")
@@ -402,13 +439,10 @@ while(next_day != 0):
     print(f"Scanned in {(time.time() - start_time)/60:.2f} minutes")
     end_interface()
 
-# RUN SELENIUM IN PARRALEL FOR EACH SPORT
+
+# ADD LIVE MATCHES CHECKER
 # SEE IF POSSIBLE TO GET BOOKMAKERS FROM MATCH ALREADY
 # ADD OPTION TO ADD SPORTS BACK TO SELECTED
-# CREATE A SETTINGS FILE TO STORE USER SETTINGS AND ADD NEW SPORTS TO THE LIST
-# CLEAN UP SPAGHETTI OF ALL THESE INTERFACES INTERACTIONS, POSSIBLY LOOK INTO PYTHON GUI
-# CALCULATOR FEATURE TO INPUT ODDS AND BET AMOUNT
-# ALL CALCULATOR OPTIONS FOR ODD INPUT
     
 #ndfjoi/ fe, dkasiew/.dius/ - msdifnj/ jo#sdkje/ . djasi# fdlej// ejf) goodi #// repi dei . # (/{lovi iu lipe titico})
 #if (ai bigi laique compani titico ) //
