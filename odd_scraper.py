@@ -38,29 +38,30 @@ user_urls = list(urls.values())
 user_deselected_urls = []
 sports_selected = list(urls.keys())
 sports_deselected = []
+
 config = configparser.ConfigParser()
+config_dir = os.path.dirname(os.path.realpath(__file__)) + "/config.ini"
 
 # Setting up config file if doesnt exist
-if not os.path.exists("/config.ini"):
-    testdir = os.path.dirname(os.path.realpath(__file__))
-    new_dir = testdir + "/config.ini"
+if not os.path.exists(config_dir):
 
     config.add_section('Settings')
-    config.set('Settings','blacklist','')
+    config.set('Settings','blacklist',str(blacklist))
     config.set('Settings','user_selected_urls', str(user_urls))
     config.set('Settings','user_deselected_urls', str(user_deselected_urls))
     config.set('Settings','sports_selected',str(sports_selected))
     config.set('Settings','sports_deselected',str(sports_deselected))
 
-    with open(new_dir,'w') as newini:
+    with open(config_dir,'w') as newini:
         config.write(newini)
+
 else:
+    config.read(config_dir)
     blacklist = ast.literal_eval(config['Settings']['blacklist'])
     user_deselected_urls = ast.literal_eval(config['Settings']['user_deselected_urls'])
     user_urls = ast.literal_eval(config['Settings']['user_selected_urls'])
     sports_selected = ast.literal_eval(config['Settings']['sports_selected'])
     sports_deselected = ast.literal_eval(config['Settings']['sports_deselected'])
-
 
 # Prints all items in an array and its index + 1
 def print_list(arr_urls):
@@ -77,7 +78,9 @@ def print_list(arr_urls):
 
 # User blacklist configuration section
 def user_bookmaker(blacklist,bookmakers):
+    global config
     user_bookmaker_choices = -1
+
     while(user_bookmaker_choices != "C"):
         clear_terminal()
         if blacklist:
@@ -93,13 +96,17 @@ def user_bookmaker(blacklist,bookmakers):
                 clear_terminal()
             case _:
                 blacklist.append(bookmakers[int(user_bookmaker_choices)-1])
+                config.set('Settings','blacklist',str(blacklist))
                 bookmakers.pop(int(user_bookmaker_choices)-1)
+
+                with open(config_dir,'w') as newini:
+                    config.write(newini)
     return blacklist,bookmakers
 
 
 # Receives user input to select sports to scan
 def user_sports():
-    global sports_selected,user_urls,sports_deselected,user_deselected_urls
+    global sports_selected,user_urls,sports_deselected,user_deselected_urls, config
     user_sport_choices = -1
 
     while(user_sport_choices != "C"):
@@ -118,9 +125,19 @@ def user_sports():
                         print_list(sports_selected)
                         remove_index = input("Enter the sport you would like to remove, [C] - Close: ").upper()
                         if remove_index.isnumeric():
-                            if int(remove_index) -1 < len(sports_selected) and int(remove_index) > 0:         # If input in list index range remove from user_urls and add to deselected
+                             # If input in list index range remove from user_urls and add to deselected
+                            if int(remove_index) -1 < len(sports_selected) and int(remove_index) > 0:
                                 user_deselected_urls.append(user_urls.pop(int(remove_index)-1))
+                                config.set('Settings','user_selected_urls',str(user_urls))
+                                config.set('Settings','user_deselected_urls',str(user_deselected_urls))
+
                                 sports_deselected.append(sports_selected.pop(int(remove_index)-1))
+                                config.set('Settings','sports_deselected',str(sports_deselected))
+                                config.set('Settings','sports_selected',str(sports_selected))
+
+                                with open(config_dir,'w') as newini:
+                                    config.write(newini)
+
                     if not sports_selected:
                         clear_terminal()
                         print("All sports deselected\n")
@@ -135,9 +152,19 @@ def user_sports():
                         add_index = input("Enter the sport you would like to add, [C] - Close: ").upper()
 
                         if add_index.isnumeric():
-                            if int(add_index) -1 < len(sports_deselected) and int(add_index) > 0:         # If input in list index range remove from user_urls and add to deselected
+                            # If input in list index range remove from user_urls and add to deselected in config and lists
+                            if int(add_index) -1 < len(sports_deselected) and int(add_index) > 0:
                                 user_urls.append(user_deselected_urls.pop(int(add_index)-1))
+                                config.set('Settings','user_selected_urls',str(user_urls))
+                                config.set('Settings','user_deselected_urls',str(user_deselected_urls))
+
                                 sports_selected.append(sports_deselected.pop(int(add_index)-1))
+                                config.set('Settings','sports_deselected',str(sports_deselected))
+                                config.set('Settings','sports_selected',str(sports_selected))
+
+                                with open(config_dir,'w') as newini:
+                                    config.write(newini)
+
                     if not sports_deselected:
                         clear_terminal()
                         print("All sports added\n")
@@ -258,7 +285,7 @@ def start_interface():
     global next_day,sports_selected,blacklist,user_urls,bookmakers,sports_deselected,user_deselected_urls,count_day
     user_settings_choice = -1
 
-    while user_settings_choice != "C":
+    while user_settings_choice != "C" and user_settings_choice != "E":
         print(f"Current settings:\nSports Selected: {*sports_selected,}\nBlacklist: {*blacklist,}")
         user_settings_choice = input("\nSettings:\n\n[1] - Blacklist Bookmakers\n[2] - Select Sports\n[3] - Calculator\n[C] - Continue\n[L] - Live Odds\n[S] - Skip Day\n[E] - Exit\n").upper()
 
@@ -272,8 +299,8 @@ def start_interface():
             case "C":
                 pass
             case "E":
-                user_settings_choice = "C"
                 next_day = 0
+                break
             case "S":
                 clear_terminal()
                 print("Skipped Day\n")
@@ -319,7 +346,7 @@ def scrape_matches():
 clear_terminal()
 start_interface()
 
-if not user_urls:
+if not user_urls or next_day == 0:
     next_day = 0
 else:
     # Initialize selenium scraper
