@@ -20,6 +20,9 @@ profit_bets = []
 bets_today = 0
 scrape_type = ''
 start_time = ''
+bets_today = 0
+count = 0
+blocked_count = 0
 
 # List of all bookmakers scanned, and initalize blacklist as empty
 bookmakers = ['1xBet', '20Bet', '22Bet', '31bet', '4rabet', 'Adjarabet', 'Amuletobet', 'BC.Game Sport', 'bet365', 'Bet7', 'Bet9', 'bet90', 'Betano', 'Betboo Sport',
@@ -254,6 +257,7 @@ def end_interface():
                 print(f"Scanning next days matches...")
                 next_day = 1
                 count_day += 1
+                scrape_matches(user_urls=user_urls)
                 break
             case "E":
                 print(f"Exiting...")
@@ -300,8 +304,8 @@ def start_interface():
             case "3":
                 calculators_ui(chosen_match=None)
             case "C":
-                matches = scrape_matches(user_urls=user_urls)
                 scrape_type = 'Regular'
+                scrape_matches(user_urls=user_urls)
             case "E":
                 next_day = 0
                 break
@@ -313,8 +317,8 @@ def start_interface():
                 next_day = 1
                 count_day += 1
             case "L":
-                matches = live_matches()
                 scrape_type = 'Live'
+                live_matches()
             case _:
                 clear_terminal()
                 print("Please enter a valid input!")
@@ -344,11 +348,19 @@ def live_matches():
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
     matches = drive_live.find_elements(By.CLASS_NAME,'match')
 
-    return matches
+    get_profits(matches)
+
+    return
 
 # Regular match scrapes
 def scrape_matches(user_urls):
-    global next_day,matches,start_time
+    global next_day,matches,start_time,count,blocked_count
+
+    print("Blacklisted Bookmakers: ")
+    if not blacklist:
+        print("No blacklisted bookmakers")
+    else:
+        print(*blacklist,sep=', ')
 
     start_time = time.time()
     
@@ -365,7 +377,8 @@ def scrape_matches(user_urls):
     print(*sports_selected,sep=', ')
 
     for i,url in enumerate(user_urls,0):
-        matches = []
+        count = 0
+        blocked_count = 0
 
         print(f"\n{sports_selected[i]}: ")
         print("-"*200,end='\n')
@@ -395,103 +408,89 @@ def scrape_matches(user_urls):
             continue
 
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "span.odd__logo > img")))
-        
-    print(f"Matches Scanned: {len(matches)}")
-    return matches
-
-# Initial screen with all options
-clear_terminal()
-
-# Scrape matches from every day until user decides to stop
-while(next_day != 0):
-    start_interface()
-
-    bets_today = 0
-
-    # Outputs which sports will be scanned
-    #clear_terminal()
-
-    print("Blacklisted Bookmakers: ")
-    if not blacklist:
-        print("No blacklisted bookmakers")
-    else:
-        print(*blacklist,sep=', ')
-        
-        count = 0
-        blocked_count = 0
-        #Loops through all matches scraped
-        for x, match in enumerate(matches,1):
-            if "ODDS INDISPON" in match.text:
-                continue
-            if scrape_type != 'Live':
-                if "Adia." in match.text:
-                    status = match.text.splitlines()[1]
-                else:
-                    status = match.text.splitlines()[0]
-
-                if("Jogando" in status or "FT" in status or "Canc" in status or ":" not in status):
-                    continue
-            else:
-                status = match.text.splitlines()[0]
-
-            # Filters the odds and link for each match
-            odds_raw = match.find_element(By.CLASS_NAME,'match-odds')
-            odds = odds_raw.text.splitlines()
-
-            # Ignores matches without odds, finished games or ongoing games
-            rolling_sum = 0
-            old_running_sum = 0
-            # Calculates arbitrage odds for each match independent of how many values per match (Win,Draw,Loss or Win,Loss)
-            for x,value in enumerate(odds,0):
-                rolling_sum += (1/float(value))
-                odds[x] = float(value)              # Cast each odd from string to float
-
-            # Calculates as a percentage of profit for user
-            old_rolling_sum = (1 - rolling_sum) * 100   
-            rolling_sum = ((1/rolling_sum)-1) * 100
-
-            # Sets profit floor filter based on live or regular scrape
-            if scrape_type == 'Live':
-                profit_floor = 5
-            else:
-                profit_floor = 1
-
-            #Filters only profitable bets
-            if(rolling_sum >= profit_floor and rolling_sum != 0):
-                count += 1
-                bets_today += 1
-            else:
-                continue
-
-            # Gets the sites the best odds are on, can be used to filter out specific sites
-            site = []
-            logos = match.find_elements(By.CSS_SELECTOR,'span.odd__logo > img')
-
-            for logo in logos:
-                site.append(logo.get_attribute("alt"))
-                
-            # Gets match link and game status
-            link = match.find_element(By.TAG_NAME,"a").get_attribute("href")
-
-            # Filter out blacklisted bookmakers from profitable bets
-            if(any(x in site for x in blacklist) and rolling_sum >= profit_floor and rolling_sum != 0):
-                blocked_count += 1
-                rolling_sum = 0
-            else:
-                curr_bet = [status,odds,round(rolling_sum,2),link,site]
-                profit_bets.append(curr_bet)
-                print(f"[{len(profit_bets):02d}] {status:<7} | Match: {', '.join(str(x) for x in odds):<15} - {'Odds:':>5} {rolling_sum:>5.2f}{'%':<2} - {link} - Sites: {*site,}")
-
+        get_profits(matches)
 
         # Display number of good bets and number of blacklisted bets
         if(count == 0):
             print(f"No good odds | Blocked: {blocked_count}")
         else:
             print(f"{count} Good Odds | Blocked: {blocked_count}")
-    
+        
+    print(f"Matches Scanned: {len(matches)}")
+
     print("-"*180,end='\n')
-    print(f"Scanned {len(matches)} matches in {(time.time() - start_time)/60:.2f} minutes")
-    end_interface()
+    print(f"Scanned in {(time.time() - start_time)/60:.2f} minutes")
+    return
+
+def get_profits(matches):
+    global bets_today,blocked_count,count,profit_bets
+
+    #Loops through all matches scraped
+    for x, match in enumerate(matches,1):
+        if "ODDS INDISPONÍVEIS" in match.text:
+            continue
+        if scrape_type != 'Live':
+            if "Adia." in match.text:
+                status = match.text.splitlines()[1]
+            else:
+                status = match.text.splitlines()[0]
+
+            if("Jogando" in status or "FT" in status or "Canc" in status or ":" not in status):
+                continue
+        else:
+            status = match.text.splitlines()[0]
+
+        # Filters the odds and link for each match
+        odds_raw = match.find_element(By.CLASS_NAME,'match-odds')
+        odds = odds_raw.text.splitlines()
+
+        # Ignores matches without odds, finished games or ongoing games
+        rolling_sum = 0
+        # Calculates arbitrage odds for each match independent of how many values per match (Win,Draw,Loss or Win,Loss)
+        for x,value in enumerate(odds,0):
+            rolling_sum += (1/float(value))
+            odds[x] = float(value)              # Cast each odd from string to float
+
+        # Calculates as a percentage of profit for user 
+        rolling_sum = ((1/rolling_sum)-1) * 100
+
+        # Sets profit floor filter based on live or regular scrape
+        if scrape_type == 'Live':
+            profit_floor = 5
+        else:
+            profit_floor = 1
+
+        #Filters only profitable bets
+        if(rolling_sum >= profit_floor and rolling_sum != 0):
+            count += 1
+            bets_today += 1
+        else:
+            continue
+
+        # Gets the sites the best odds are on, can be used to filter out specific sites
+        site = []
+        logos = match.find_elements(By.CSS_SELECTOR,'span.odd__logo > img')
+
+        for logo in logos:
+            site.append(logo.get_attribute("alt"))
+            
+        # Gets match link and game status
+        link = match.find_element(By.TAG_NAME,"a").get_attribute("href")
+
+        # Filter out blacklisted bookmakers from profitable bets
+        if(any(x in site for x in blacklist) and rolling_sum >= profit_floor and rolling_sum != 0):
+            blocked_count += 1
+            rolling_sum = 0
+        else:
+            curr_bet = [status,odds,round(rolling_sum,2),link,site]
+            profit_bets.append(curr_bet)
+            print(f"[{len(profit_bets):02d}] {status:<7} | Match: {', '.join(str(x) for x in odds):<15} - {'Odds:':>5} {rolling_sum:>5.2f}{'%':<2} - {link} - Sites: {*site,}")
+
+
+# Initial screen with all options
+clear_terminal()
+start_interface()
+end_interface()
 
 
 # ADD OPTION TO ADD SPORTS BACK TO SELECTED
