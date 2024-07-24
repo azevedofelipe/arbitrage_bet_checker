@@ -12,6 +12,7 @@ import time
 import ast
 import configparser
 from arb_calculator import calculator, print_calc_results, calculate_remaining_bets, input_odds
+from seleniumbase import Driver
 
 # Initialize day selection values
 next_day = 2
@@ -370,7 +371,8 @@ def scrape_matches(user_urls):
         # Initialize selenium scraper
         service = Service()
         options = webdriver.ChromeOptions()
-        d = webdriver.Chrome(service=service, options=options)
+        d = Driver(uc=True)
+        # d = webdriver.Chrome(service=service, options=options)
         wait = WebDriverWait(d,10)
     
     print("Scanning for bets in the following sports:")
