@@ -69,8 +69,12 @@ def get_all_odds(sport: str,start_date: str, end_date: str, floor_profit: int) -
             logger.log('Got matches that havent started')
 
             profits = filtered_df.groupby('matchId')['value'].apply(get_profits).reset_index(name='profit')
-            df_profit = pd.merge(filtered_df, profits, on='matchId',how='left')
+            profits = pd.merge(filtered_df, profits, on='matchId',how='left')
             logger.log('Got match profits')
+
+            df_profit = profits[profits['profit'] >= floor_profit]
+            logger.log('Filtered out unprofittable matches')
+            print(df_profit.head(15))
 
             return df_profit
 
