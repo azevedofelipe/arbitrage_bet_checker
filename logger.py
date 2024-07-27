@@ -3,7 +3,7 @@ import logging
 import datetime
 from typing import Union, Literal
 
-class Logger:
+class LoggerClass:
     LOG_LEVELS = {
         "debug": logging.DEBUG,
         "info": logging.INFO,
@@ -55,3 +55,6 @@ class Logger:
     ):
         log_level = self.LOG_LEVELS.get(level, self.LOG_LEVELS["info"])
         self.logger.log(log_level, message)
+
+# Initialize logger
+logger = LoggerClass()
