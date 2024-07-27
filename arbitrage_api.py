@@ -35,14 +35,11 @@ def call_api(url: str):
         return None
     
 
-def get_profits(match_odds: list) -> float:
-    rolling_sum = 0
+def get_profits(value):
+    profit = (1 / value.astype(float)).sum()
 
-    for odd in match_odds:
-        rolling_sum += (1/float(odd['value']))
-
-    percentage = round(((1/rolling_sum)-1) * 100,2)
-    return percentage 
+    profit_percent = round((1 - profit) * 100,2)
+    return profit_percent
 
 
 def get_all_odds(sport: str,start_date: str, end_date: str, floor_profit: int) -> pd.DataFrame | bool:
@@ -63,22 +60,26 @@ def get_all_odds(sport: str,start_date: str, end_date: str, floor_profit: int) -
     if raw_json := call_api(url):
         logger.log('Got all odds json')
         match_data = raw_json['data']
-        df = pd.json_normalize([{**item, 'id':key} for key, items in match_data.items() if isinstance(items,list) for item in items])
+        df = pd.json_normalize([{**item, 'matchId':key} for key, items in match_data.items() if isinstance(items,list) for item in items])
+
+        filtered_df = df[df['status'] == 3]
 
         # status == 3 means the match hasnt started yet
-        return filtered_df if not (filtered_df := df[df['status'] == 3]).empty else False
-    else:
-        logger.log('Failed to get raw match odds','error')
-        return False
+        if not filtered_df.empty: 
+            logger.log('Got matches that havent started')
+
+            profits = filtered_df.groupby('matchId')['value'].apply(get_profits).reset_index(name='profit')
+            df_profit = pd.merge(filtered_df, profits, on='matchId',how='left')
+            logger.log('Got match profits')
+
+            return df_profit
+
+    logger.log('Failed to get all match odds','error')
+    return False
 
 def main():
     create_driver()
-    
-    if isinstance(df_odds := get_all_odds('football',TODAY,TMRW,1), pd.DataFrame):
-        logger.log('Got filtered dataframe')
-        print(df_odds.head())
-    else:
-        logger.log('Empty dataframe','error')
+    get_all_odds('football',TODAY,TMRW,1)
 
 if __name__ == '__main__':
     main()
