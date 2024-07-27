@@ -18,7 +18,7 @@ def create_driver():
 
 
 def call_api(url: str):
-    logger.log(f'Starting API call to {url[:20]}')
+    logger.log(f'Starting API call to {url[:50]}')
     driver.get(url)
     wait = WebDriverWait(driver,5)
     
@@ -56,34 +56,69 @@ def get_all_odds(sport: str,start_date: str, end_date: str, floor_profit: int) -
     """
 
     url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=&bookmakerGeoState=&wettsteuer=0&startDate={start_date}T03%3A00%3A00Z&endDate={end_date}T02%3A59%3A59Z&sport={sport}&ot=100&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status=all&page=1&perPage=250&inplay=0&language=en'
+    logger.log('Calling API')
 
     if raw_json := call_api(url):
         logger.log('Got all odds json')
         match_data = raw_json['data']
         df = pd.json_normalize([{**item, 'matchId':key} for key, items in match_data.items() if isinstance(items,list) for item in items])
 
-        filtered_df = df[df['status'] == 3]
+        df = df[df['status'] == 3]
 
         # status == 3 means the match hasnt started yet
-        if not filtered_df.empty: 
+        if not df.empty: 
             logger.log('Got matches that havent started')
 
-            profits = filtered_df.groupby('matchId')['value'].apply(get_profits).reset_index(name='profit')
-            profits = pd.merge(filtered_df, profits, on='matchId',how='left')
+            profits = df.groupby('matchId')['value'].apply(get_profits).reset_index(name='profit')
+            profits = pd.merge(df, profits, on='matchId',how='left')
             logger.log('Got match profits')
 
             df_profit = profits[profits['profit'] >= floor_profit]
             logger.log('Filtered out unprofittable matches')
-            print(df_profit.head(15))
 
             return df_profit
 
     logger.log('Failed to get all match odds','error')
     return False
 
+def get_match_info(df: pd.DataFrame):
+
+    df['home'] = None
+    df['away'] = None
+    df['time'] = None
+    df['league'] = None
+    df['url'] = None
+
+    unique_matches = df['matchId'].unique()
+    
+    for match in unique_matches:
+        url = f"https://oddspedia.com/api/v1/getMatchInfo?geoCode=&wettsteuer=0&r=wv&matchId={match}&language=en"
+
+        match_data = call_api(url)
+
+        if match_data:
+            match_data = match_data['data']
+
+            new_values = {
+                'home': match_data.get('ht'), 
+                'away': match_data.get('at'), 
+                'time': match_data.get('starttime'), 
+                'league': match_data.get('league_name'),
+                'url': 'https://oddspedia.com' + match_data.get('uri')
+            }
+
+            df.loc[df['matchId'] == match, ['home', 'away', 'time', 'league', 'url']] = list(new_values.values())
+            
+    
+    return df
+
 def main():
     create_driver()
-    get_all_odds('football',TODAY,TMRW,1)
+    profitable_matches = get_all_odds('football',TODAY,TMRW,1)
+    
+    if isinstance(profitable_matches, pd.DataFrame):
+        info = get_match_info(profitable_matches)
+    
 
 if __name__ == '__main__':
     main()
