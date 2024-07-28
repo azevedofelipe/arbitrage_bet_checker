@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
+from typing import Literal
 
 
 TODAY = str(date.today())
@@ -18,7 +19,7 @@ def create_driver():
 
 
 def call_api(url: str):
-    logger.log(f'Starting API call to {url[:50]}')
+    logger.log(f'Starting API call to {url[29:65]}')
     driver.get(url)
     wait = WebDriverWait(driver,5)
     
@@ -35,14 +36,31 @@ def call_api(url: str):
         return None
     
 
-def get_profits(value):
-    profit = (1 / value.astype(float)).sum()
+def get_profit_percent(odds: list[dict]) -> float:
+    profit = sum(1 / float(odd['value']) for odd in odds)
+    profit_percent = round(((1/profit)-1) * 100,2)
 
-    profit_percent = round((1 - profit) * 100,2)
     return profit_percent
 
 
-def get_all_odds(sport: str,start_date: str, end_date: str, floor_profit: int) -> pd.DataFrame | bool:
+def single_line_matches(df: pd.DataFrame) -> pd.DataFrame:
+    """Transforms multiple row match odds due to flattening json to single row match data
+
+    Args:
+        df (pd.DataFrame): flattened dataframe with multiline match data
+
+    Returns:
+        pd.DataFrame: dataframe with all odds in single row as dict
+    """
+
+    odds_df = df.groupby('matchId')[['odd_name','value','bookie']].apply(lambda x: x.to_dict('records')).reset_index(name='odds')
+    df = df.drop_duplicates(subset='matchId')
+    merged_df = df.merge(odds_df, on='matchId',how='left')
+
+    return merged_df
+
+
+def get_all_odds(sport: str,start_date: str, end_date: str, floor_profit: int) -> pd.DataFrame | Literal[False]:
     """ Get all match odds of sport from start_date to end_date >= floor_profit
 
     Args:
@@ -68,15 +86,18 @@ def get_all_odds(sport: str,start_date: str, end_date: str, floor_profit: int) -
         # status == 3 means the match hasnt started yet
         if not df.empty: 
             logger.log('Got matches that havent started')
+            df = single_line_matches(df)
 
-            profits = df.groupby('matchId')['value'].apply(get_profits).reset_index(name='profit')
-            profits = pd.merge(df, profits, on='matchId',how='left')
+            df['profit'] = df['odds'].apply(get_profit_percent)
             logger.log('Got match profits')
 
-            df_profit = profits[profits['profit'] >= floor_profit]
+            df = df[df['profit'] >= floor_profit]
             logger.log('Filtered out unprofittable matches')
 
-            return df_profit
+            df = get_match_info(df)
+            logger.log('Got match info')
+
+            return df
 
     logger.log('Failed to get all match odds','error')
     return False
@@ -109,16 +130,23 @@ def get_match_info(df: pd.DataFrame):
 
             df.loc[df['matchId'] == match, ['home', 'away', 'time', 'league', 'url']] = list(new_values.values())
             
-    
     return df
+
+
+def display_matches(df: pd.DataFrame) -> None:
+    print(df.groupby('matchId'))
+
 
 def main():
     create_driver()
     profitable_matches = get_all_odds('football',TODAY,TMRW,1)
     
-    if isinstance(profitable_matches, pd.DataFrame):
-        info = get_match_info(profitable_matches)
-    
+    if isinstance(profitable_matches,pd.DataFrame):
+        logger.log('Found profitable matches')
+        print(profitable_matches.head(5))
 
+    #TODO Make it display the info i guess
+    #TODO Make all the match stuff a class
+    #TODO Allow user to select start and end dates
 if __name__ == '__main__':
     main()
