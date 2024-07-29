@@ -1,8 +1,10 @@
 from logger import logger
-from utils import create_driver, call_api
+from utils import create_driver, call_api, format_date
 import pandas as pd
 from typing import Literal
 
+
+DROP_COLS = ['odd_name','value','bid','link','slug','bookie','status','offerId']
 
 # Ugly ass code, change later
 class MatchOdds:
@@ -19,6 +21,7 @@ class MatchOdds:
 
         if isinstance(self.df,pd.DataFrame):
             self.profitable = len(self.df)
+            self.clean_table(DROP_COLS)
 
         self.driver.quit()
 
@@ -90,7 +93,7 @@ class MatchOdds:
                 new_values = {
                     'home': match_data.get('ht'), 
                     'away': match_data.get('at'), 
-                    'time': match_data.get('starttime'), 
+                    'time': format_date(match_data.get('starttime')),
                     'league': match_data.get('league_name'),
                     'url': 'https://oddspedia.com' + match_data.get('uri')
                 }
@@ -108,7 +111,8 @@ class MatchOdds:
     def display_matches(self):
         print('Sure Bets')
         print('-'*130)
-        for index, row in self.df.iterrows():
-            print(row['time'] + ' | ' + row['home'] + ' vs ' + row['away'] + ' | ' + str(row['profit']) + '% | ' + row['url']) 
-            print('-'*130)
+        if isinstance(self.df,pd.DataFrame):
+            for index, row in self.df.iterrows():
+                print(row['time'] + ' | ' + row['home'] + ' vs ' + row['away'] + ' | ' + str(row['profit']) + '% | ' + row['url']) 
+                print('-'*130)
 

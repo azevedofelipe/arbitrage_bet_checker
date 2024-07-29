@@ -1,10 +1,9 @@
 from logger import logger
 from seleniumbase import Driver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import json
-from datetime import datetime
+import re
+import pandas as pd
 
 
 def create_driver():
@@ -12,12 +11,14 @@ def create_driver():
 
 
 def call_api(driver, url: str):
-    logger.log(f'Starting API call to {url[29:65]}')
+    if api := re.search(r'api/v1/([^?]*)',url):
+        logger.log(f'Starting API call to {api.group(1)}')
+
     driver.get(url)
-    wait = WebDriverWait(driver,5)
+    # wait = WebDriverWait(driver,5)
     
     try:
-        wait.until(EC.presence_of_element_located((By.TAG_NAME,'pre')))
+        # wait.until(EC.presence_of_element_located((By.TAG_NAME,'pre')))
         pre_element = driver.find_element(By.TAG_NAME, 'pre').text
         logger.log("Found JSON")
         json_data = json.loads(pre_element)
@@ -30,7 +31,6 @@ def call_api(driver, url: str):
 
 
 def format_date(date_str: str) -> str:
-    dt = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S%z')
-    formatted_date = dt.strftime('%d/%m %I%p')
-    formatted_date = formatted_date.replace(" 0", " ")
-    return formatted_date
+    dt = pd.to_datetime([date_str])
+    formatted_date = dt.strftime('%d/%m %I %p')
+    return formatted_date[0]
