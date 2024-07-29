@@ -9,10 +9,119 @@ import pandas as pd
 from typing import Literal
 
 
-TODAY = str(date.today())
-TMRW = str(date.today() + timedelta(days=1))
+# TODAY = str(date.today())
+TODAY = str(date.today() + timedelta(days=1))
+TMRW = str(date.today() + timedelta(days=2))
+DROP_COLS = ['odd_name','value','bid','link','slug','bookie','status','offerId']
 
-    
+
+# Ugly ass code, change later
+class OddsAnalyzer:
+    def __init__(self, sport: str, start_date: str, end_date: str, floor_profit: int, status: Literal['prematch','inplay','all']):
+        self.sport = sport
+        self.start_date = start_date
+        self.end_date = end_date
+        self.floor_profit = floor_profit
+        self.status = status
+        self.df = self.get_all_odds()
+        self.profitable = len(self.df)
+
+    @staticmethod
+    def get_profit_percent(odds: list[dict]) -> float:
+        profit = sum(1 / float(odd['value']) for odd in odds)
+        profit_percent = round(((1/profit)-1) * 100,2)
+
+        return profit_percent
+
+    def single_line_matches(self):
+        odds_df = self.df.groupby('matchId')[['odd_name','value','bookie']].apply(lambda x: x.to_dict('records')).reset_index(name='odds')
+        self.df = self.df.drop_duplicates(subset='matchId')
+        self.df = self.df.merge(odds_df, on='matchId',how='left')
+        logger.log('Made all matches a single row')
+
+
+
+
+    def get_all_odds(self):
+        url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=&bookmakerGeoState=&wettsteuer=0&startDate={self.start_date}T03%3A00%3A00Z&endDate={self.end_date}T02%3A59%3A59Z&sport={self.sport}&ot=100&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status={self.status}&page=1&perPage=600&inplay=0&language=en'
+        logger.log('Calling API')
+
+        try:
+            if raw_json := call_api(url):
+                match_data = raw_json['data']
+                self.df = pd.json_normalize([{**item, 'matchId':key} for key, items in match_data.items() if isinstance(items,list) for item in items])
+                logger.log(f'Found {len(self.df)} matches for {self.sport}')
+
+                self.df = self.df[self.df['status'] == 3]
+
+                # Clean match data, find profit matches and get more info on those
+                if not self.df.empty: 
+                    logger.log('Got matches that havent started')
+                    self.single_line_matches()
+
+                    self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
+                    logger.log('Got match profits')
+
+                    self.df = self.df[self.df['profit'] >= self.floor_profit]
+                    logger.log(f'Filtered {len(self.df)} profitable matches')
+
+                    self.df = self.get_match_info()
+                    logger.log('Got match info')
+
+                    return self.df
+
+            logger.log('Failed to get all match odds','error')
+            return False
+
+        except:
+            logger.log('Failed to get all match odds','error')
+            return False
+
+
+    def get_match_info(self):
+
+        self.df['home'] = None
+        self.df['away'] = None
+        self.df['time'] = None
+        self.df['league'] = None
+        self.df['url'] = None
+
+        unique_matches = self.df['matchId'].unique()
+        
+        for match in unique_matches:
+            url = f"https://oddspedia.com/api/v1/getMatchInfo?geoCode=&wettsteuer=0&r=wv&matchId={match}&language=en"
+
+            match_data = call_api(url)
+
+            if match_data:
+                match_data = match_data['data']
+
+                new_values = {
+                    'home': match_data.get('ht'), 
+                    'away': match_data.get('at'), 
+                    'time': match_data.get('starttime'), 
+                    'league': match_data.get('league_name'),
+                    'url': 'https://oddspedia.com' + match_data.get('uri')
+                }
+
+                self.df.loc[self.df['matchId'] == match, ['home', 'away', 'time', 'league', 'url']] = list(new_values.values())
+                
+        return self.df
+
+
+    def clean_table(self,col_names: list):
+        self.df = self.df.drop(columns=col_names)
+
+
+    def display_matches(self):
+        
+        print('Sure Bets')
+        print('-'*130)
+        for index, row in self.df.iterrows():
+            print(row['time'] + ' | ' + row['home'] + ' vs ' + row['away'] + ' | ' + str(row['profit']) + '% | ' + row['url']) 
+            print('-'*130)
+
+
 def create_driver():
     global driver
     driver = Driver(uc=True,headless=False)
@@ -36,117 +145,22 @@ def call_api(url: str):
         return None
     
 
-def get_profit_percent(odds: list[dict]) -> float:
-    profit = sum(1 / float(odd['value']) for odd in odds)
-    profit_percent = round(((1/profit)-1) * 100,2)
-
-    return profit_percent
-
-
-def single_line_matches(df: pd.DataFrame) -> pd.DataFrame:
-    """Transforms multiple row match odds due to flattening json to single row match data
-
-    Args:
-        df (pd.DataFrame): flattened dataframe with multiline match data
-
-    Returns:
-        pd.DataFrame: dataframe with all odds in single row as dict
-    """
-
-    odds_df = df.groupby('matchId')[['odd_name','value','bookie']].apply(lambda x: x.to_dict('records')).reset_index(name='odds')
-    df = df.drop_duplicates(subset='matchId')
-    merged_df = df.merge(odds_df, on='matchId',how='left')
-
-    return merged_df
-
-
-def get_all_odds(sport: str,start_date: str, end_date: str, floor_profit: int) -> pd.DataFrame | Literal[False]:
-    """ Get all match odds of sport from start_date to end_date >= floor_profit
-
-    Args:
-        sport (str): Sport to get match odds for (e.g football)
-        start_date (str): Start date for filter
-        end_date (str): End date for filter
-        floor_profit (int): Floor profit, returns any matches >= floor_profit
-
-    Returns:
-        dict: Returns matchId, odds and profit %
-    """
-
-    url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=&bookmakerGeoState=&wettsteuer=0&startDate={start_date}T03%3A00%3A00Z&endDate={end_date}T02%3A59%3A59Z&sport={sport}&ot=100&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status=all&page=1&perPage=250&inplay=0&language=en'
-    logger.log('Calling API')
-
-    if raw_json := call_api(url):
-        logger.log('Got all odds json')
-        match_data = raw_json['data']
-        df = pd.json_normalize([{**item, 'matchId':key} for key, items in match_data.items() if isinstance(items,list) for item in items])
-
-        df = df[df['status'] == 3]
-
-        # status == 3 means the match hasnt started yet
-        if not df.empty: 
-            logger.log('Got matches that havent started')
-            df = single_line_matches(df)
-
-            df['profit'] = df['odds'].apply(get_profit_percent)
-            logger.log('Got match profits')
-
-            df = df[df['profit'] >= floor_profit]
-            logger.log('Filtered out unprofittable matches')
-
-            df = get_match_info(df)
-            logger.log('Got match info')
-
-            return df
-
-    logger.log('Failed to get all match odds','error')
-    return False
-
-def get_match_info(df: pd.DataFrame):
-
-    df['home'] = None
-    df['away'] = None
-    df['time'] = None
-    df['league'] = None
-    df['url'] = None
-
-    unique_matches = df['matchId'].unique()
-    
-    for match in unique_matches:
-        url = f"https://oddspedia.com/api/v1/getMatchInfo?geoCode=&wettsteuer=0&r=wv&matchId={match}&language=en"
-
-        match_data = call_api(url)
-
-        if match_data:
-            match_data = match_data['data']
-
-            new_values = {
-                'home': match_data.get('ht'), 
-                'away': match_data.get('at'), 
-                'time': match_data.get('starttime'), 
-                'league': match_data.get('league_name'),
-                'url': 'https://oddspedia.com' + match_data.get('uri')
-            }
-
-            df.loc[df['matchId'] == match, ['home', 'away', 'time', 'league', 'url']] = list(new_values.values())
-            
-    return df
-
-
-def display_matches(df: pd.DataFrame) -> None:
-    print(df.groupby('matchId'))
-
 
 def main():
     create_driver()
-    profitable_matches = get_all_odds('football',TODAY,TMRW,1)
+    football_profit = OddsAnalyzer('football',TODAY,TMRW,0,'prematch')
     
-    if isinstance(profitable_matches,pd.DataFrame):
+    if football_profit.df is not False:
         logger.log('Found profitable matches')
-        print(profitable_matches.head(5))
+        football_profit.clean_table(DROP_COLS) 
+        football_profit.display_matches()
+        print(football_profit.profitable)
 
-    #TODO Make it display the info i guess
-    #TODO Make all the match stuff a class
     #TODO Allow user to select start and end dates
+    #TODO See if its possible to do date range greater than 1 day
+    #TODO use regex on call_api url log text
+    #TODO look into a user interface
+
+
 if __name__ == '__main__':
     main()
