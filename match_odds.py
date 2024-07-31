@@ -18,12 +18,11 @@ class MatchOdds:
         self.status = status
         self.df = self.get_all_odds()
         self.profitable = 0
+        self.driver.quit()
 
         if isinstance(self.df,pd.DataFrame):
             self.profitable = len(self.df)
             self.clean_table(DROP_COLS)
-
-        self.driver.quit()
 
     
     @staticmethod
@@ -39,6 +38,21 @@ class MatchOdds:
         self.df = self.df.drop_duplicates(subset='matchId')
         self.df = self.df.merge(odds_df, on='matchId',how='left')
         logger.log('Made all matches a single row')
+    
+
+    def fetch_and_normalize_data(self, url: str) -> pd.DataFrame | None:
+        if json := call_api(self.driver, url):
+            match_data = json['data']
+            df = pd.json_normalize([{**item, 'matchId':key} for key, items in match_data.items() if isinstance(items,list) for item in items])
+            logger.log(f'Found {len(df)} matches for {self.sport}')
+
+            df = df[df['status'] == 3]
+
+            if not df.empty: 
+                logger.log('Got matches that havent started')
+                return df
+
+        return None
 
 
     def get_all_odds(self):
@@ -46,35 +60,28 @@ class MatchOdds:
         logger.log('Calling API')
 
         try:
-            if raw_json := call_api(self.driver, url):
-                match_data = raw_json['data']
-                self.df = pd.json_normalize([{**item, 'matchId':key} for key, items in match_data.items() if isinstance(items,list) for item in items])
-                logger.log(f'Found {len(self.df)} matches for {self.sport}')
+            clean_data = self.fetch_and_normalize_data(url)
 
-                self.df = self.df[self.df['status'] == 3]
+            if clean_data is None:
+                logger.log(f'No match results found for {self.sport}')
+                return None
 
-                # Clean match data, find profit matches and get more info on those
-                if not self.df.empty: 
-                    logger.log('Got matches that havent started')
-                    self.single_line_matches()
+            self.single_line_matches()
 
-                    self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
-                    logger.log('Got match profits')
+            self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
+            logger.log('Got match profits')
 
-                    self.df = self.df[self.df['profit'] >= self.floor_profit]
-                    logger.log(f'Filtered {len(self.df)} profitable matches')
+            self.df = self.df[self.df['profit'] >= self.floor_profit]
+            logger.log(f'Filtered {len(self.df)} profitable matches')
 
-                    self.df = self.get_match_info()
-                    logger.log('Got match info')
+            self.df = self.get_match_info()
+            logger.log('Got match info')
 
-                    return self.df
-
-            logger.log('Failed to get all match odds','error')
-            return False
+            return self.df
 
         except:
             logger.log('Failed to get all match odds','error')
-            return False
+            return None
 
 
     def get_match_info(self):
@@ -116,3 +123,7 @@ class MatchOdds:
                 print(row['time'] + ' | ' + row['home'] + ' vs ' + row['away'] + ' | ' + str(row['profit']) + '% | ' + row['url']) 
                 print('-'*130)
 
+
+def run_match_odds(sport: str, start_date: str, end_date: str, floor_profit: int, status: Literal['prematch','inplay','all']) -> MatchOdds:
+    match_odds = MatchOdds(sport, start_date, end_date, floor_profit, status)
+    return match_odds
