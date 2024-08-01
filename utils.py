@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def create_driver():
-    return Driver(uc=True,headless=False)
+    return Driver(uc=True,headless=True)
 
 
 def call_api(driver, url: str):
