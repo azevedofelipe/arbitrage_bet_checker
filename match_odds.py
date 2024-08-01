@@ -34,10 +34,14 @@ class MatchOdds:
 
 
     def single_line_matches(self):
-        odds_df = self.df.groupby('matchId')[['odd_name','value','bookie']].apply(lambda x: x.to_dict('records')).reset_index(name='odds')
-        self.df = self.df.drop_duplicates(subset='matchId')
-        self.df = self.df.merge(odds_df, on='matchId',how='left')
-        logger.log('Made all matches a single row')
+        try:
+            odds_df = self.df.groupby('matchId')[['odd_name','value','bookie']].apply(lambda x: x.to_dict('records')).reset_index(name='odds')
+            self.df = self.df.drop_duplicates(subset='matchId')
+            self.df = self.df.merge(odds_df, on='matchId',how='left')
+            logger.log('Made all matches a single row')
+        except:
+            logger.log('Error making matches single line','error')
+            exit()
     
 
     def fetch_and_normalize_data(self, url: str) -> pd.DataFrame | None:
@@ -66,6 +70,7 @@ class MatchOdds:
                 logger.log(f'No match results found for {self.sport}')
                 return None
 
+            self.df = clean_data
             self.single_line_matches()
 
             self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
@@ -122,8 +127,3 @@ class MatchOdds:
             for index, row in self.df.iterrows():
                 print(row['time'] + ' | ' + row['home'] + ' vs ' + row['away'] + ' | ' + str(row['profit']) + '% | ' + row['url']) 
                 print('-'*130)
-
-
-def run_match_odds(sport: str, start_date: str, end_date: str, floor_profit: int, status: Literal['prematch','inplay','all']) -> MatchOdds:
-    match_odds = MatchOdds(sport, start_date, end_date, floor_profit, status)
-    return match_odds
