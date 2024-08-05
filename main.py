@@ -5,13 +5,13 @@ import pandas as pd
 import time
 
 
-TODAY = date.today()
-TMRW = date.today() + timedelta(days=1)
+START = date.today()
+END = date.today() + timedelta(days=3)
 
 
 def main():
     start = time.time()
-    football_profit = MatchOdds('football',TODAY,TMRW,1,'prematch')
+    football_profit = MatchOdds('football',START,END,1,'prematch')
     
     if  isinstance(football_profit.df, pd.DataFrame):
         logger.log('Found profitable matches')

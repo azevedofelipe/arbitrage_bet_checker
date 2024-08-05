@@ -2,25 +2,26 @@ from logger import logger
 from utils import create_driver, call_api, format_date
 import pandas as pd
 from typing import Literal
+from datetime import date
+from utils import list_all_days
 
 
 DROP_COLS = ['odd_name','value','bid','link','slug','bookie','status','offerId']
 
 # Ugly ass code, change later
 class MatchOdds:
-    def __init__(self, sport: str, start_date: str, end_date: str, floor_profit: int, status: Literal['prematch','inplay','all']):
+    def __init__(self, sport: str, start_date: date, end_date: date, floor_profit: int, status: Literal['prematch','inplay','all']):
         self.driver = create_driver()
 
         self.sport = sport
-        self.start_date = start_date
-        self.end_date = end_date
+        self.list_days = list_all_days(start_date,end_date)
         self.floor_profit = floor_profit
         self.status = status
         self.df = self.get_all_odds()
         self.profitable = 0
         self.driver.quit()
 
-        if isinstance(self.df,pd.DataFrame):
+        if not self.df.empty:
             self.profitable = len(self.df)
             self.clean_table(DROP_COLS)
 
@@ -60,33 +61,41 @@ class MatchOdds:
 
 
     def get_all_odds(self):
-        url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=&bookmakerGeoState=&wettsteuer=0&startDate={self.start_date}T03%3A00%3A00Z&endDate={self.end_date}T02%3A59%3A59Z&sport={self.sport}&ot=100&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status={self.status}&page=1&perPage=600&inplay=0&language=en'
-        logger.log('Calling API')
-
         try:
-            clean_data = self.fetch_and_normalize_data(url)
+            df_list = []
 
-            if clean_data is None:
-                logger.log(f'No match results found for {self.sport}')
-                return None
+            for start_day, end_day in self.list_days.items():
+                url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=&bookmakerGeoState=&wettsteuer=0&startDate={start_day}T03%3A00%3A00Z&endDate={end_day}T02%3A59%3A59Z&sport={self.sport}&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status={self.status}&page=1&perPage=600&inplay=0&language=en'
+                logger.log(f'Calling API for days {start_day}, {end_day}')
 
-            self.df = clean_data
-            self.single_line_matches()
+                clean_data = self.fetch_and_normalize_data(url)
 
-            self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
-            logger.log('Got match profits')
+                if clean_data is None:
+                    logger.log(f'No match results found for {self.sport} on date {start_day}')
+                    continue
 
-            self.df = self.df[self.df['profit'] >= self.floor_profit]
-            logger.log(f'Filtered {len(self.df)} profitable matches')
+                self.df = clean_data
+                self.single_line_matches()
 
-            self.df = self.get_match_info()
-            logger.log('Got match info')
+                self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
+                logger.log('Got match profits')
 
-            return self.df
+                self.df = self.df[self.df['profit'] >= self.floor_profit]
+                logger.log(f'Filtered {len(self.df)} profitable matches')
 
-        except:
-            logger.log('Failed to get all match odds','error')
-            return None
+                self.df = self.get_match_info()
+                logger.log('Got match info')
+                
+                df_list.append(self.df)
+
+            if df_list:
+                return pd.concat(df_list,ignore_index=True)
+            
+            return pd.DataFrame()
+
+        except Exception as e:
+            logger.log(f'Failed to get all match odds: {e}','error')
+            return pd.DataFrame()
 
 
     def get_match_info(self):
@@ -96,6 +105,7 @@ class MatchOdds:
         
         for match in unique_matches:
             url = f"https://oddspedia.com/api/v1/getMatchInfo?geoCode=&wettsteuer=0&r=wv&matchId={match}&language=en"
+            logger.log(f'Getting match info for {match}')
 
             match_data = call_api(self.driver,url)
 
