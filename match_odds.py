@@ -84,7 +84,7 @@ class MatchOdds:
                 logger.log(f'Filtered {len(self.df)} profitable matches')
 
                 self.df = self.get_match_info()
-                logger.log('Got match info')
+                logger.log('Got match info for all profitable bets')
                 
                 df_list.append(self.df)
 

@@ -6,7 +6,7 @@ import time
 
 
 START = date.today()
-END = date.today() + timedelta(days=3)
+END = date.today() + timedelta(days=1)
 
 
 def main():
@@ -21,9 +21,8 @@ def main():
 
     #TODO Look into wait on call_api why it takes so long
     #TODO Allow user to select start and end dates
-    #TODO See if its possible to do date range greater than 1 day
-    #TODO look into a user interface
     #TODO look into how to run multiple drivers at once
+    #TODO remake requirements.txt
 
 
 if __name__ == '__main__':
