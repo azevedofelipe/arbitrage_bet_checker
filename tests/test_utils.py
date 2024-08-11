@@ -1,12 +1,12 @@
 import pytest
 import sys
 import os
-from datetime import date,timedelta
+from datetime import date
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
-from utils import format_date,list_all_days
+from utils.utils import format_date,list_all_days
 
 @pytest.mark.parametrize("input_date,expected", [
     ('2024-07-30 00:00:00+00', '30/07 12 AM'),

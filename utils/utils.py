@@ -1,4 +1,4 @@
-from logger import logger
+from utils.logger import logger
 from seleniumbase import Driver
 from selenium.webdriver.common.by import By
 import json
