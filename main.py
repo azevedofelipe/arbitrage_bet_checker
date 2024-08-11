@@ -1,6 +1,6 @@
 from datetime import date,timedelta
 from match_odds import MatchOdds
-from logger import logger
+from utils.logger import logger
 import pandas as pd
 import time
 

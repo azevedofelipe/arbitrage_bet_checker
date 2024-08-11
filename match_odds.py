@@ -1,9 +1,9 @@
-from logger import logger
-from utils import create_driver, call_api, format_date
+from utils.logger import logger
+from utils.utils import create_driver, call_api, format_date
 import pandas as pd
 from typing import Literal
 from datetime import date
-from utils import list_all_days
+from utils.utils import list_all_days
 
 
 DROP_COLS = ['odd_name','value','bid','link','slug','bookie','status','offerId']
@@ -65,7 +65,7 @@ class MatchOdds:
             df_list = []
 
             for start_day, end_day in self.list_days.items():
-                url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=&bookmakerGeoState=&wettsteuer=0&startDate={start_day}T03%3A00%3A00Z&endDate={end_day}T02%3A59%3A59Z&sport={self.sport}&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status={self.status}&page=1&perPage=600&inplay=0&language=en'
+                url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=BR&bookmakerGeoState=&wettsteuer=0&startDate={start_day}T03%3A00%3A00Z&endDate={end_day}T02%3A59%3A59Z&sport={self.sport}&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status={self.status}&page=1&perPage=600&inplay=0&language=en'
                 logger.log(f'Calling API for days {start_day}, {end_day}')
 
                 clean_data = self.fetch_and_normalize_data(url)
@@ -104,7 +104,7 @@ class MatchOdds:
         unique_matches = self.df['matchId'].unique()
         
         for match in unique_matches:
-            url = f"https://oddspedia.com/api/v1/getMatchInfo?geoCode=&wettsteuer=0&r=wv&matchId={match}&language=en"
+            url = f"https://oddspedia.com/api/v1/getMatchInfo?geoCode=BR&wettsteuer=0&r=wv&matchId={match}&language=en"
             logger.log(f'Getting match info for {match}')
 
             match_data = call_api(self.driver,url)
