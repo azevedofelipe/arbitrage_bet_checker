@@ -1,13 +1,29 @@
+import CTkSpinbox.ctkspinbox
 import customtkinter as ctk
 from tkinter import ttk
 from match_odds import MatchOdds
 from datetime import date, timedelta
 import webbrowser
 import pandas as pd
-
+from CTkSpinbox import CTkSpinbox
 
 START = date.today()
 END = date.today() + timedelta(days=1)
+
+
+class FilterTab(ctk.CTkFrame):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+
+        custom_font = ctk.CTkFont(size=11)  # Change 12 to your desired font size
+
+
+        self.label_odd = ctk.CTkLabel(self, text="Days:")
+        self.label_odd.grid(row=0, column=0,sticky='n',padx=20)
+
+        spin_var = ctk.IntVar()
+        self.days_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=10,scroll_value=1,variable=spin_var,height=30,width=70,font=custom_font)
+        self.days_filter.grid(row=0,column=1)
 
 
 class CalculatorTab(ctk.CTkFrame):
@@ -57,6 +73,9 @@ class TabView(ctk.CTkTabview):
 
         self.calculator_tab = CalculatorTab(master=self.tab("Calculator"))
         self.calculator_tab.grid(row=0, column=0, padx=20, pady=20)
+
+        self.filter_tab = FilterTab(master=self.tab("Filters"))
+        self.filter_tab.grid(row=0,column=0,padx=20,pady=20)
 
 
 class TreeViewFrame(ctk.CTkFrame):
