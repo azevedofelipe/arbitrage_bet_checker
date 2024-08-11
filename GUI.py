@@ -15,15 +15,27 @@ class FilterTab(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
 
-        custom_font = ctk.CTkFont(size=11)  # Change 12 to your desired font size
+        custom_font = ctk.CTkFont(size=11) 
 
 
         self.label_odd = ctk.CTkLabel(self, text="Days:")
         self.label_odd.grid(row=0, column=0,sticky='n',padx=20)
-
-        spin_var = ctk.IntVar()
-        self.days_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=10,scroll_value=1,variable=spin_var,height=30,width=70,font=custom_font)
+        self.days_var = ctk.IntVar()
+        self.days_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=10,scroll_value=1,variable=self.days_var,height=30,width=70,font=custom_font)
         self.days_filter.grid(row=0,column=1)
+
+        self.label_odd = ctk.CTkLabel(self, text="Profit %:")
+        self.label_odd.grid(row=1, column=0,sticky='n',padx=20,pady=10)
+        self.profit_var = ctk.DoubleVar()
+        self.profit_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=100,scroll_value=1,variable=self.profit_var,height=30,width=70,font=custom_font)
+        self.profit_filter.grid(row=1,column=1,padx=20,pady=10)
+
+        self.button_apply = ctk.CTkButton(self, text="Apply", command=self.apply_filters)
+        self.button_apply.grid(row=3, column=0, padx=10, pady=10)
+
+    def apply_filters(self):
+        print(self.days_var.get())
+        print(self.profit_var.get())
 
 
 class CalculatorTab(ctk.CTkFrame):
