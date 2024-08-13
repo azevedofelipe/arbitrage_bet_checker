@@ -15,23 +15,26 @@ class FilterTab(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
 
-        custom_font = ctk.CTkFont(size=11) 
 
-
-        self.label_odd = ctk.CTkLabel(self, text="Days:")
-        self.label_odd.grid(row=0, column=0,sticky='n',padx=20)
+        self.label_days = ctk.CTkLabel(self, text="Days:")
+        self.label_days.grid(row=0, column=0,padx=10, sticky='w')
         self.days_var = ctk.IntVar()
-        self.days_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=10,scroll_value=1,variable=self.days_var,height=30,width=70,font=custom_font)
-        self.days_filter.grid(row=0,column=1)
+        self.days_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=10,scroll_value=1,variable=self.days_var,height=30,width=70,font=('Arial',11))
+        self.days_filter.grid(row=0,column=1,pady=10,padx=10,sticky='e')
 
-        self.label_odd = ctk.CTkLabel(self, text="Profit %:")
-        self.label_odd.grid(row=1, column=0,sticky='n',padx=20,pady=10)
+        self.label_profit = ctk.CTkLabel(self, text="Profit %:")
+        self.label_profit.grid(row=1, column=0,pady=10,padx=10,sticky='w')
         self.profit_var = ctk.DoubleVar()
-        self.profit_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=100,scroll_value=1,variable=self.profit_var,height=30,width=70,font=custom_font)
-        self.profit_filter.grid(row=1,column=1,padx=20,pady=10)
+        self.profit_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=100,scroll_value=1,variable=self.profit_var,height=30,width=70,font=('Arial',11))
+        self.profit_filter.grid(row=1,column=1,pady=10,padx=10,sticky='e')
 
-        self.button_apply = ctk.CTkButton(self, text="Apply", command=self.apply_filters)
-        self.button_apply.grid(row=3, column=0, padx=10, pady=10)
+        self.label_refresh = ctk.CTkLabel(self, text="Refresh Rate:")
+        self.label_refresh.grid(row=2, column=0,pady=10,padx=10, sticky='w')
+        self.combo_refresh = ctk.CTkComboBox(self,values=['30s','1min','2min','5min','10min','30min'],width=70)
+        self.combo_refresh.grid(row=2, column=1,pady=10,padx=10,sticky='e')
+
+        self.button_apply = ctk.CTkButton(self, text="Apply", command=self.apply_filters,width=80)
+        self.button_apply.grid(row=3, column=0, pady=10,columnspan=2)
 
     def apply_filters(self):
         print(self.days_var.get())
@@ -43,11 +46,17 @@ class CalculatorTab(ctk.CTkFrame):
         super().__init__(master, **kwargs)
         
 
-        self.label_odd = ctk.CTkLabel(self, text="Odd")
-        self.label_odd.grid(row=0, column=0,sticky='n')
+        self.label_odd = ctk.CTkLabel(self, text="Bet Amount:",width=90)
+        self.label_odd.grid(row=0, column=0,pady=20)
+        bet_amount = ctk.CTkEntry(self,width=90)
+        bet_amount.configure(justify='center')
+        bet_amount.grid(row=0, column=1,pady=20)
 
-        self.label_amount = ctk.CTkLabel(self, text="Amount")
-        self.label_amount.grid(row=0, column=1,sticky='n')
+        self.label_odd = ctk.CTkLabel(self, text="Odd",width=90)
+        self.label_odd.grid(row=1, column=0,sticky='s')
+
+        self.label_amount = ctk.CTkLabel(self, text="Amount",width=90)
+        self.label_amount.grid(row=1, column=1,sticky='s')
 
 
         self.entry_fields = []
@@ -56,17 +65,20 @@ class CalculatorTab(ctk.CTkFrame):
         for _ in range(3):
             self.create_entry_fields() 
 
-        self.button_subtract = ctk.CTkButton(self, text="New Odd", command=self.create_entry_fields)
-        self.button_subtract.grid(row=8, column=0, padx=10, pady=10)
+        self.button_new = ctk.CTkButton(self, text="New Odd", command=self.create_entry_fields,width=90)
+        self.button_new.grid(row=8, column=0, padx=10, pady=10,columnspan=2)
 
     def create_entry_fields(self):
         # Create two new entry fields
-        row = len(self.entry_fields) + 1  # Calculate the next row based on the current number of entry fields
-        entry_odd = ctk.CTkEntry(self)
-        entry_amount = ctk.CTkEntry(self)
+        row = len(self.entry_fields) + 2  # Calculate the next row based on the current number of entry fields
+        entry_odd = ctk.CTkEntry(self,width=90)
+        entry_amount = ctk.CTkEntry(self,width=90)
 
-        entry_odd.grid(row=row, column=0,pady=10)
-        entry_amount.grid(row=row, column=1,pady=10)
+        entry_odd.configure(justify='center')
+        entry_amount.configure(justify='center')
+
+        entry_odd.grid(row=row, column=0,sticky='n',padx=10,pady=4)
+        entry_amount.grid(row=row, column=1,sticky='n',padx=10,pady=4)
 
         # Store the entry fields in the list
         self.entry_fields.append((entry_odd, entry_amount))
@@ -80,14 +92,14 @@ class TabView(ctk.CTkTabview):
         self.add("Calculator")
 
         for tab_name in ["Filters", "Calculator"]:
-            self.tab(tab_name).grid_columnconfigure(0, weight=2)
-            self.tab(tab_name).grid_rowconfigure(0, weight=2)
+            self.tab(tab_name).grid_columnconfigure(0, weight=1)
+            self.tab(tab_name).grid_rowconfigure(0, weight=1)
 
-        self.calculator_tab = CalculatorTab(master=self.tab("Calculator"))
-        self.calculator_tab.grid(row=0, column=0, padx=20, pady=20)
+        self.calculator_tab = CalculatorTab(master=self.tab("Calculator"),width=70)
+        self.calculator_tab.grid(row=0, column=0, pady=20)
 
-        self.filter_tab = FilterTab(master=self.tab("Filters"))
-        self.filter_tab.grid(row=0,column=0,padx=20,pady=20)
+        self.filter_tab = FilterTab(master=self.tab("Filters"),width=70)
+        self.filter_tab.grid(row=0,column=0,pady=20)
 
 
 class TreeViewFrame(ctk.CTkFrame):
@@ -172,11 +184,11 @@ class App(ctk.CTk):
 
         self.df = None
 
-        self.tab_view_frame = TabView(master=self)
-        self.tab_view_frame.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
+        self.tab_view_frame = TabView(master=self,width=70)
+        self.tab_view_frame.grid(row=0, column=1, padx=20, pady=10, sticky="nsew")
 
         self.tree_view_frame = TreeViewFrame(master=self, df=pd.DataFrame(columns=["time", "home", "away", "profit", "url"]),generate_and_load_data_callback=self.generate_and_load_data)
-        self.tree_view_frame.grid(row=0, column=1, padx=20, pady=10, sticky="nsew")
+        self.tree_view_frame.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
 
         # Load data onstart, disabled for now
         # self.after(100, self.generate_and_load_data)
