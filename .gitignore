@@ -2,4 +2,6 @@
 /logs
 __pycache__
 /downloaded_files
+/.pytest_cache
+*.json
 
