@@ -57,8 +57,10 @@ def list_all_days(start_date: date, end_date: date) -> dict[str,str]:
     return date_dict
 
 
-def list_available_sports(driver, dates: dict, region: str) -> dict | bool:
+def list_available_sports(driver, dates: dict, settings) -> dict | bool:
     days = dict()
+    region = settings.region
+    sports = settings.sports
 
     for start_date,end_date in dates.items():
         url = f'https://oddspedia.com/api/v1/getLeagues?topLeaguesOnly=0&includeLeaguesWithoutMatches=0&startDate={start_date}T03%3A00%3A00Z&endDate={end_date}T02%3A59%3A59Z&geoCode={region}&language=en'
@@ -67,7 +69,7 @@ def list_available_sports(driver, dates: dict, region: str) -> dict | bool:
         if not json:
             return False
 
-        available_sports = {item['sport_slug'] for item in json['data']}
-        days[start_date] = available_sports
+        available_sports = {item['sport_slug'] for item in json['data'] if sports.get(item['sport_slug'])}
+        days[(start_date,end_date)] = available_sports
 
     return days
