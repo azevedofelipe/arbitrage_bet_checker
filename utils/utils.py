@@ -6,10 +6,12 @@ import re
 import pandas as pd
 from datetime import date,timedelta
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
-def create_driver():
-    return Driver(uc=True,headless=True)
+def create_driver(headless: bool = True):
+    return Driver(uc=True,headless=headless)
 
 
 def call_api(driver, url: str):
@@ -17,10 +19,10 @@ def call_api(driver, url: str):
         logger.log(f'Starting API call to {api.group(1)}')
 
     driver.get(url)
-    # wait = WebDriverWait(driver,5)
+    wait = WebDriverWait(driver,3)
     
     try:
-        # wait.until(EC.presence_of_element_located((By.TAG_NAME,'pre')))
+        wait.until(EC.presence_of_element_located((By.TAG_NAME,'pre')))
         try:
             pre_element = driver.find_element(By.TAG_NAME, 'pre').text
 
@@ -53,3 +55,19 @@ def list_all_days(start_date: date, end_date: date) -> dict[str,str]:
         current_date += timedelta(days=1)
     
     return date_dict
+
+
+def list_available_sports(driver, dates: dict, region: str) -> dict | bool:
+    days = dict()
+
+    for start_date,end_date in dates.items():
+        url = f'https://oddspedia.com/api/v1/getLeagues?topLeaguesOnly=0&includeLeaguesWithoutMatches=0&startDate={start_date}T03%3A00%3A00Z&endDate={end_date}T02%3A59%3A59Z&geoCode={region}&language=en'
+        json = call_api(driver,url)
+        
+        if not json:
+            return False
+
+        available_sports = {item['sport_slug'] for item in json['data']}
+        days[start_date] = available_sports
+
+    return days
