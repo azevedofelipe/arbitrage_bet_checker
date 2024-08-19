@@ -76,3 +76,15 @@ def list_available_sports(driver, dates: dict, settings) -> dict:
             days[(start_date,end_date)] = available_sports
 
     return days
+
+
+def get_region_bookmakers(driver, region: str) -> list:
+    bookmakers = []
+    url = f'https://oddspedia.com/api/v1/getBookmakers?geoCode={region}&geoState=&language=en'
+
+    json = call_api(driver,url)
+
+    if json:
+        bookmakers = [item['name'] for item in json['data']]
+    
+    return bookmakers
