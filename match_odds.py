@@ -39,8 +39,8 @@ class MatchOdds:
             self.df = self.df.drop_duplicates(subset='matchId')
             self.df = self.df.merge(odds_df, on='matchId',how='left')
             logger.log('Made all matches a single row')
-        except:
-            logger.log('Error making matches single line','error')
+        except Exception as e:
+            logger.log(f'Error making matches single line: {e}','error')
             exit()
     
 
