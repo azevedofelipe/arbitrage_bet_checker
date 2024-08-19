@@ -4,4 +4,5 @@ __pycache__
 /downloaded_files
 /.pytest_cache
 *.json
+test.py
 
