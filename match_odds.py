@@ -1,24 +1,23 @@
 from utils.logger import logger
-from utils.utils import create_driver, call_api, format_date
+from utils.utils import create_driver, call_api, format_date, list_all_days, list_available_sports
 import pandas as pd
-from typing import Literal
-from datetime import date
-from utils.utils import list_all_days
+from settings import Settings
 
 
 DROP_COLS = ['odd_name','value','bid','link','slug','bookie','status','offerId']
 
-# Ugly ass code, change later
 class MatchOdds:
-    def __init__(self, sport: str, start_date: date, end_date: date, floor_profit: int, status: Literal['prematch','inplay','all']):
+    def __init__(self, settings: Settings):
         self.driver = create_driver()
-
-        self.sport = sport
-        self.list_days = list_all_days(start_date,end_date)
-        self.floor_profit = floor_profit
-        self.status = status
-        self.df = self.get_all_odds()
+        self.list_days = list_all_days(settings.days_scan)
+        self.floor_profit = settings.floor_profit
+        self.status = settings.match_status
+        self.df_list = []
+        self.available_sports = list_available_sports(self.driver,self.list_days,settings)
         self.profitable = 0
+
+        # Currently calling for each sport and then for each day, would need to make it so it calls the day and then sports for that day
+        self.df = self.get_all_odds()
         self.driver.quit()
 
         if not self.df.empty:
@@ -49,7 +48,7 @@ class MatchOdds:
         if json := call_api(self.driver, url):
             match_data = json['data']
             df = pd.json_normalize([{**item, 'matchId':key} for key, items in match_data.items() if isinstance(items,list) for item in items])
-            logger.log(f'Found {len(df)} matches for {self.sport}')
+            logger.log(f'Found {len(df)} matches')
 
             df = df[df['status'] == 3]
 
@@ -64,29 +63,33 @@ class MatchOdds:
         try:
             df_list = []
 
-            for start_day, end_day in self.list_days.items():
-                url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=BR&bookmakerGeoState=&wettsteuer=0&startDate={start_day}T03%3A00%3A00Z&endDate={end_day}T02%3A59%3A59Z&sport={self.sport}&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status={self.status}&page=1&perPage=600&inplay=0&language=en'
-                logger.log(f'Calling API for days {start_day}, {end_day}')
+            for days, sports in self.available_sports.items():
+                start_day = days[0]
+                end_day = days[1]
+                for sport in sports:
+                    url = f'https://oddspedia.com/api/v1/getMaxOddsWithPagination?geoCode=BR&bookmakerGeoCode=BR&bookmakerGeoState=&wettsteuer=0&startDate={start_day}T03%3A00%3A00Z&endDate={end_day}T02%3A59%3A59Z&sport={sport}&excludeSpecialStatus=0&popularLeaguesOnly=0&sortBy=default&status={self.status}&page=1&perPage=600&inplay=0&language=en'
+                    logger.log(f'Calling API for {sport} on {start_day}')
+                    self.sport = sport
 
-                clean_data = self.fetch_and_normalize_data(url)
+                    clean_data = self.fetch_and_normalize_data(url)
 
-                if clean_data is None:
-                    logger.log(f'No match results found for {self.sport} on date {start_day}')
-                    continue
+                    if clean_data is None:
+                        logger.log(f'No match results found for {sport} on date {start_day}')
+                        continue
 
-                self.df = clean_data
-                self.single_line_matches()
+                    self.df = clean_data
+                    self.single_line_matches()
 
-                self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
-                logger.log('Got match profits')
+                    self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
+                    logger.log('Got match profits')
 
-                self.df = self.df[self.df['profit'] >= self.floor_profit]
-                logger.log(f'Filtered {len(self.df)} profitable matches')
+                    self.df = self.df[self.df['profit'] >= self.floor_profit]
+                    logger.log(f'Filtered {len(self.df)} profitable matches')
 
-                self.df = self.get_match_info()
-                logger.log('Got match info for all profitable bets')
-                
-                df_list.append(self.df)
+                    self.df = self.get_match_info()
+                    logger.log('Got match info for all profitable bets')
+                    
+                    df_list.append(self.df)
 
             if df_list:
                 return pd.concat(df_list,ignore_index=True)
@@ -127,13 +130,3 @@ class MatchOdds:
 
     def clean_table(self,col_names: list):
         self.df = self.df.drop(columns=col_names)
-
-
-    #TODO Make this better, temporary prints
-    def display_matches(self):
-        print('Sure Bets')
-        print('-'*130)
-        if isinstance(self.df,pd.DataFrame):
-            for index, row in self.df.iterrows():
-                print(row['time'] + ' | ' + row['home'] + ' vs ' + row['away'] + ' | ' + str(row['profit']) + '% | ' + row['url']) 
-                print('-'*130)
