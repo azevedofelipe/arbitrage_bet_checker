@@ -6,6 +6,7 @@ from datetime import date, timedelta
 import webbrowser
 import pandas as pd
 from CTkSpinbox import CTkSpinbox
+from settings import Settings
 
 START = date.today()
 END = date.today() + timedelta(days=1)
@@ -37,6 +38,7 @@ class FilterTab(ctk.CTkFrame):
         self.button_apply.grid(row=3, column=0, pady=10,columnspan=2)
 
     def apply_filters(self):
+        #TODO Figure out how to pass the settings stuff to here to update settings
         print(self.days_var.get())
         print(self.profit_var.get())
 
@@ -195,7 +197,9 @@ class App(ctk.CTk):
 
     def generate_and_load_data(self):
         self.tree_view_frame.option_clear()
-        self.df = MatchOdds('football', START, START, 1, 'prematch').df
+        self.settings = Settings.load()
+        self.odds = MatchOdds(self.settings, START, START)
+        self.df = self.odds.df
         self.tree_view_frame.load_data(self.df)
 
 
