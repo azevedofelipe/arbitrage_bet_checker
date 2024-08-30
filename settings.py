@@ -8,7 +8,6 @@ class Settings:
     days_scan: int = 1
     floor_profit: int = 1
     refresh_time: int = 120
-    sports: dict = field(default_factory=dict)
     region: str = 'BR'
     match_status: str = 'prematch'    # List of match status ('prematch','inplay','all') others
     bookmakers: dict = field(default_factory=dict)  # Get all from API
