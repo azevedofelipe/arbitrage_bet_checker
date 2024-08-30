@@ -50,33 +50,12 @@ def format_date(date_str: str) -> str:
     formatted_date = dt.strftime('%d/%m %I %p')
     return formatted_date[0]
 
-# Grabs all days upto end_date + 1 to filter urls
-def list_all_days(days_count: int) -> dict[str,str]:
+
+def get_start_end_days(days_count: int) -> tuple:
     current_date = date.today()
     end_date = current_date + timedelta(days=days_count)
-    date_dict = {}
-
-    while current_date <= end_date: 
-        date_dict[str(current_date)] = str(current_date + timedelta(days=1))
-        current_date += timedelta(days=1)
     
-    return date_dict
-
-
-def list_available_sports(driver, dates: dict, settings) -> dict:
-    days = dict()
-    region = settings.region
-    sports = settings.sports
-
-    for start_date,end_date in dates.items():
-        url = f'https://oddspedia.com/api/v1/getLeagues?topLeaguesOnly=0&includeLeaguesWithoutMatches=0&startDate={start_date}T03%3A00%3A00Z&endDate={end_date}T02%3A59%3A59Z&geoCode={region}&language=en'
-        json = call_api(driver,url)
-
-        if json:
-            available_sports = {item['sport_slug'] for item in json['data'] if sports.get(item['sport_slug'])}
-            days[(start_date,end_date)] = available_sports
-
-    return days
+    return (str(current_date), str(end_date))
 
 
 def get_region_bookmakers(driver, region: str) -> list:
