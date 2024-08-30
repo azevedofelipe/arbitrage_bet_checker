@@ -14,35 +14,36 @@ def create_driver(headless: bool = True):
     return Driver(uc=True,headless=headless)
 
 
-def call_api(driver, url: str):
+def call_api(driver, url: str, attempts: int = 2):
     if api := re.search(r'api/v1/([^?]*)',url):
         logger.log(f'Starting API call to {api.group(1)}')
 
-    driver.get(url)
     wait = WebDriverWait(driver,3)
     
-    try:
-        wait.until(EC.presence_of_element_located((By.TAG_NAME,'pre')))
+    for _ in range(attempts):
         try:
-            pre_element = driver.find_element(By.TAG_NAME, 'pre').text
+            logger.log(f'Calling API ({_}/{attempts})')
+            driver.get(url)
 
-        except NoSuchElementException:
-            logger.log("<pre> element not found")
-            return None
+            wait.until(EC.presence_of_element_located((By.TAG_NAME,'pre')))
+            try:
+                pre_element = driver.find_element(By.TAG_NAME, 'pre').text
+                logger.log("Found JSON")
+                json_data = json.loads(pre_element)
+                logger.log('Returned JSON')
+                return json_data
 
-        logger.log("Found JSON")
-        json_data = json.loads(pre_element)
-        logger.log('Returned JSON')
-        return json_data
+            except NoSuchElementException:
+                logger.log("<pre> element not found")
 
-    except json.JSONDecodeError as e:
-        logger.log(f"Erro ao analisar JSON: {e}",'error')
-        return None
-    
-    except Exception as e:
-        logger.log(f'General Error {e}')
-        return None
+        except json.JSONDecodeError as e:
+            logger.log(f"Erro ao analisar JSON: {e}",'error')
+        
+        except Exception as e:
+            logger.log(f'General Error {e}')
 
+
+    return None
 
 def format_date(date_str: str) -> str:
     dt = pd.to_datetime([date_str])
