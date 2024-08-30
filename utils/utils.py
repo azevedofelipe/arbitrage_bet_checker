@@ -20,7 +20,7 @@ def call_api(driver, url: str, attempts: int = 2):
 
     wait = WebDriverWait(driver,3)
     
-    for _ in range(attempts):
+    for _ in range(1,attempts+1):
         try:
             logger.log(f'Calling API ({_}/{attempts})')
             driver.get(url)
