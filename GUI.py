@@ -2,31 +2,28 @@ import CTkSpinbox.ctkspinbox
 import customtkinter as ctk
 from tkinter import ttk
 from match_odds import MatchOdds
-from datetime import date, timedelta
 import webbrowser
 import pandas as pd
 from CTkSpinbox import CTkSpinbox
 from settings import Settings
 
-START = date.today()
-END = date.today() + timedelta(days=1)
-
 
 class FilterTab(ctk.CTkFrame):
-    def __init__(self, master, **kwargs):
+    def __init__(self, settings, master, **kwargs):
         super().__init__(master, **kwargs)
+        self.settings = settings.load()
 
 
         self.label_days = ctk.CTkLabel(self, text="Days:")
         self.label_days.grid(row=0, column=0,padx=10, sticky='w')
         self.days_var = ctk.IntVar()
-        self.days_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=10,scroll_value=1,variable=self.days_var,height=30,width=70,font=('Arial',11))
+        self.days_filter = CTkSpinbox(self,start_value=self.settings.days_scan,min_value=1,max_value=30,scroll_value=1,variable=self.days_var,height=30,width=70,font=('Arial',11))
         self.days_filter.grid(row=0,column=1,pady=10,padx=10,sticky='e')
 
         self.label_profit = ctk.CTkLabel(self, text="Profit %:")
         self.label_profit.grid(row=1, column=0,pady=10,padx=10,sticky='w')
-        self.profit_var = ctk.DoubleVar()
-        self.profit_filter = CTkSpinbox(self,start_value=1,min_value=0,max_value=100,scroll_value=1,variable=self.profit_var,height=30,width=70,font=('Arial',11))
+        self.profit_var = ctk.IntVar()
+        self.profit_filter = CTkSpinbox(self,start_value=self.settings.floor_profit,min_value=0,max_value=100,scroll_value=1,variable=self.profit_var,height=30,width=70,font=('Arial',11))
         self.profit_filter.grid(row=1,column=1,pady=10,padx=10,sticky='e')
 
         self.label_refresh = ctk.CTkLabel(self, text="Refresh Rate:")
@@ -38,9 +35,9 @@ class FilterTab(ctk.CTkFrame):
         self.button_apply.grid(row=3, column=0, pady=10,columnspan=2)
 
     def apply_filters(self):
-        #TODO Figure out how to pass the settings stuff to here to update settings
-        print(self.days_var.get())
-        print(self.profit_var.get())
+        self.settings.days_scan = self.days_var.get()
+        self.settings.floor_profit = self.profit_var.get()
+        self.settings.save()
 
 
 class CalculatorTab(ctk.CTkFrame):
@@ -48,17 +45,17 @@ class CalculatorTab(ctk.CTkFrame):
         super().__init__(master, **kwargs)
         
 
-        self.label_odd = ctk.CTkLabel(self, text="Bet Amount:",width=90)
-        self.label_odd.grid(row=0, column=0,pady=20)
+        self.label_odd = ctk.CTkLabel(self, text="Total Bet:",width=90)
+        self.label_odd.grid(row=0, column=0,columnspan=2)
         bet_amount = ctk.CTkEntry(self,width=90)
         bet_amount.configure(justify='center')
-        bet_amount.grid(row=0, column=1,pady=20)
+        bet_amount.grid(row=1, column=0,pady=5,columnspan=2)
 
         self.label_odd = ctk.CTkLabel(self, text="Odd",width=90)
-        self.label_odd.grid(row=1, column=0,sticky='s')
+        self.label_odd.grid(row=2, column=0,sticky='s')
 
-        self.label_amount = ctk.CTkLabel(self, text="Amount",width=90)
-        self.label_amount.grid(row=1, column=1,sticky='s')
+        self.label_amount = ctk.CTkLabel(self, text="$ Bet",width=90)
+        self.label_amount.grid(row=2, column=1,sticky='s')
 
 
         self.entry_fields = []
@@ -72,7 +69,7 @@ class CalculatorTab(ctk.CTkFrame):
 
     def create_entry_fields(self):
         # Create two new entry fields
-        row = len(self.entry_fields) + 2  # Calculate the next row based on the current number of entry fields
+        row = len(self.entry_fields) + 3  # Calculate the next row based on the current number of entry fields
         entry_odd = ctk.CTkEntry(self,width=90)
         entry_amount = ctk.CTkEntry(self,width=90)
 
@@ -100,7 +97,7 @@ class TabView(ctk.CTkTabview):
         self.calculator_tab = CalculatorTab(master=self.tab("Calculator"),width=70)
         self.calculator_tab.grid(row=0, column=0, pady=20)
 
-        self.filter_tab = FilterTab(master=self.tab("Filters"),width=70)
+        self.filter_tab = FilterTab(Settings,master=self.tab("Filters"),width=70)
         self.filter_tab.grid(row=0,column=0,pady=20)
 
 
@@ -193,12 +190,12 @@ class App(ctk.CTk):
         self.tree_view_frame.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
 
         # Load data onstart, disabled for now
-        # self.after(100, self.generate_and_load_data)
+        # self.after(600, self.generate_and_load_data)
 
     def generate_and_load_data(self):
         self.tree_view_frame.option_clear()
         self.settings = Settings.load()
-        self.odds = MatchOdds(self.settings, START, START)
+        self.odds = MatchOdds(self.settings)
         self.df = self.odds.df
         self.tree_view_frame.load_data(self.df)
 
