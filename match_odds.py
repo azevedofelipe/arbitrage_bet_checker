@@ -35,6 +35,12 @@ class MatchOdds:
         return profit_percent
 
 
+    @staticmethod
+    def get_bookies(odds: list[dict]) -> list:
+        bookies = [odd['bookie'] for odd in odds]
+        return bookies
+
+
     def single_line_matches(self):
         try:
             odds_df = self.df.groupby('matchId')[['odd_name','value','bookie']].apply(lambda x: x.to_dict('records')).reset_index(name='odds')
@@ -77,6 +83,9 @@ class MatchOdds:
 
             self.df['profit'] = self.df['odds'].apply(self.get_profit_percent)
             logger.log('Got match profits')
+
+            self.df['bookies'] = self.df['odds'].apply(self.get_bookies)
+            logger.log('Got bookies')
 
             self.df = self.df[self.df['profit'] >= self.floor_profit]
             logger.log(f'Filtered {len(self.df)} profitable matches')
