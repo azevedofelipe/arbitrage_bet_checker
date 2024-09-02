@@ -15,7 +15,7 @@ class MatchOdds:
 
         self.floor_profit = settings.floor_profit
         self.status = settings.match_status
-        self.region = settings.region
+        self.region = settings.region[1]
         self.df_list = []
         self.profitable = 0
 

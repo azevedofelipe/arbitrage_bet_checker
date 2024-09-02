@@ -5,7 +5,7 @@ from match_odds import MatchOdds
 import webbrowser
 import pandas as pd
 from CTkSpinbox import CTkSpinbox
-from settings import Settings
+from settings import Settings, REGIONS
 
 
 class FilterTab(ctk.CTkFrame):
@@ -28,15 +28,23 @@ class FilterTab(ctk.CTkFrame):
 
         self.label_refresh = ctk.CTkLabel(self, text="Refresh Rate:")
         self.label_refresh.grid(row=2, column=0,pady=10,padx=10, sticky='w')
-        self.combo_refresh = ctk.CTkComboBox(self,values=['30s','1min','2min','5min','10min','30min'],width=70)
+        self.combo_refresh = ctk.CTkComboBox(self,values=['30','60','120','300','600','1800'],width=70)
         self.combo_refresh.grid(row=2, column=1,pady=10,padx=10,sticky='e')
+        self.combo_refresh.set(self.settings.refresh_time)
+
+        self.label_region = ctk.CTkLabel(self, text="Region:")
+        self.label_region.grid(row=3, column=0,pady=10,padx=10, sticky='w')
+        self.combo_region = ctk.CTkComboBox(self,values=list(REGIONS.keys()),width=70)
+        self.combo_region.set(self.settings.region[0])
+        self.combo_region.grid(row=3, column=1,pady=10,padx=10,sticky='e')
 
         self.button_apply = ctk.CTkButton(self, text="Apply", command=self.apply_filters,width=80)
-        self.button_apply.grid(row=3, column=0, pady=10,columnspan=2)
+        self.button_apply.grid(row=4, column=0, pady=10,columnspan=2)
 
     def apply_filters(self):
         self.settings.days_scan = self.days_var.get()
         self.settings.floor_profit = self.profit_var.get()
+        self.settings.region = (self.combo_region.get(), REGIONS[self.combo_region.get()])
         self.settings.save()
 
 

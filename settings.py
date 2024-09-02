@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 
 
+REGIONS = {'Brasil':'BR', 'UK':'GB', 'France':'FR', 'Poland':'PL', 'UAE':'AE'}
+
 @dataclass
 class Settings:
     days_scan: int = 1
