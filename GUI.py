@@ -6,6 +6,7 @@ import webbrowser
 import pandas as pd
 from CTkSpinbox import CTkSpinbox
 from settings import Settings, REGIONS
+from arb_calculator import calculate
 
 
 class FilterTab(ctk.CTkFrame):
@@ -52,12 +53,11 @@ class CalculatorTab(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         
-
         self.label_odd = ctk.CTkLabel(self, text="Total Bet:",width=90)
         self.label_odd.grid(row=0, column=0,columnspan=2)
-        bet_amount = ctk.CTkEntry(self,width=90)
-        bet_amount.configure(justify='center')
-        bet_amount.grid(row=1, column=0,pady=5,columnspan=2)
+        self.bet_amount = ctk.CTkEntry(self,width=90)
+        self.bet_amount.configure(justify='center')
+        self.bet_amount.grid(row=1, column=0,pady=5,columnspan=2)
 
         self.label_odd = ctk.CTkLabel(self, text="Odd",width=90)
         self.label_odd.grid(row=2, column=0,sticky='s')
@@ -72,14 +72,17 @@ class CalculatorTab(ctk.CTkFrame):
         for _ in range(3):
             self.create_entry_fields() 
 
-        self.button_new = ctk.CTkButton(self, text="New Odd", command=self.create_entry_fields,width=90)
-        self.button_new.grid(row=8, column=0, padx=10, pady=10,columnspan=2)
+        self.label_profit = ctk.CTkLabel(self, text="", width=90)
+        self.label_profit.grid(row=6, column=0,columnspan=2)
+
+        self.button_new = ctk.CTkButton(self, text="Calculate", command=self.calculate,width=90)
+        self.button_new.grid(row=7, column=0, padx=10, pady=10,columnspan=2)
 
     def create_entry_fields(self):
         # Create two new entry fields
         row = len(self.entry_fields) + 3  # Calculate the next row based on the current number of entry fields
         entry_odd = ctk.CTkEntry(self,width=90)
-        entry_amount = ctk.CTkEntry(self,width=90)
+        entry_amount = ctk.CTkLabel(self,width=90,text='')
 
         entry_odd.configure(justify='center')
         entry_amount.configure(justify='center')
@@ -89,6 +92,28 @@ class CalculatorTab(ctk.CTkFrame):
 
         # Store the entry fields in the list
         self.entry_fields.append((entry_odd, entry_amount))
+
+
+    def calculate(self):
+        odds = [float(field[0].get()) for field in self.entry_fields if field[0].get() != '']
+        bet_amount = float(self.bet_amount.get())
+        returns = calculate(odds,bet_amount)
+
+        for field in self.entry_fields:
+            if field[0].get() == '':
+                field[1].configure(text='')
+                continue
+
+            field[1].configure(text=returns[float(field[0].get())][0])
+            profit = returns[float(field[0].get())][1]
+            
+            if profit > 0:
+                color = 'green'
+            else:
+                color = 'red'
+
+            self.label_profit.configure(text=f'Profit: $ {profit}', text_color = color)
+
 
 
 class TabView(ctk.CTkTabview):
