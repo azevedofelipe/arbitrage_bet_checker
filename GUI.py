@@ -76,13 +76,16 @@ class CalculatorTab(ctk.CTkFrame):
         self.label_profit.grid(row=6, column=0,columnspan=2)
 
         self.button_new = ctk.CTkButton(self, text="Calculate", command=self.calculate,width=90)
-        self.button_new.grid(row=7, column=0, padx=10, pady=10,columnspan=2)
+        self.button_new.grid(row=7, column=1, padx=10, pady=10,columnspan=1)
+
+        self.button_clear = ctk.CTkButton(self, text="Clear", command=self.clear,width=90)
+        self.button_clear.grid(row=7, column=0, padx=10, pady=10,columnspan=1)
 
     def create_entry_fields(self):
         # Create two new entry fields
         row = len(self.entry_fields) + 3  # Calculate the next row based on the current number of entry fields
         entry_odd = ctk.CTkEntry(self,width=90)
-        entry_amount = ctk.CTkLabel(self,width=90,text='')
+        entry_amount = ctk.CTkLabel(self,width=90,text='-')
 
         entry_odd.configure(justify='center')
         entry_amount.configure(justify='center')
@@ -95,8 +98,8 @@ class CalculatorTab(ctk.CTkFrame):
 
 
     def calculate(self):
-        odds = [float(field[0].get()) for field in self.entry_fields if field[0].get() != '']
-        bet_amount = float(self.bet_amount.get())
+        odds = [float(field[0].get().replace(',','.')) for field in self.entry_fields if field[0].get() != '']
+        bet_amount = float(self.bet_amount.get().replace(',','.'))
         returns = calculate(odds,bet_amount)
 
         if self.entry_fields[0][0].get() == '':
@@ -105,13 +108,14 @@ class CalculatorTab(ctk.CTkFrame):
             return
 
         for field in self.entry_fields:
-
             if field[0].get() == '':
-                field[1].configure(text='')
+                field[1].configure(text='-')
                 continue
 
-            field[1].configure(text=returns[float(field[0].get())][0])
-            profit = returns[float(field[0].get())][1]
+            odd = float(field[0].get().replace(',','.'))
+
+            field[1].configure(text=returns[odd][0])
+            profit = returns[odd][1]
             
             if profit > 0:
                 color = 'green'
@@ -119,7 +123,15 @@ class CalculatorTab(ctk.CTkFrame):
                 color = 'red'
 
             self.label_profit.configure(text=f'Profit: $ {profit}', text_color = color)
+    
 
+    def clear(self):
+        self.bet_amount.delete(0,'end')
+        self.label_profit.configure(text='')
+
+        for field in self.entry_fields:
+            field[0].delete(0,'end')
+            field[1].configure(text='-')
 
 
 class TabView(ctk.CTkTabview):
