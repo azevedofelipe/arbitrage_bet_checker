@@ -41,6 +41,12 @@ class MatchOdds:
         return bookies
 
 
+    @staticmethod
+    def get_urls(matchId: str) -> str:
+        url = f'https://oddspedia.com/table-tennis/piotr-morawski-albert-misztal-1221603?m={matchId}#odds'
+        return url
+
+
     def single_line_matches(self):
         try:
             odds_df = self.df.groupby('matchId')[['odd_name','value','bookie']].apply(lambda x: x.to_dict('records')).reset_index(name='odds')
@@ -87,12 +93,11 @@ class MatchOdds:
             self.df['bookies'] = self.df['odds'].apply(self.get_bookies)
             logger.log('Got bookies')
 
+            self.df['url'] = self.df['matchId'].apply(self.get_urls)
+            logger.log('Got URLs')
+
             self.df = self.df[self.df['profit'] >= self.floor_profit]
             logger.log(f'Filtered {len(self.df)} profitable matches')
-
-            self.df = self.get_match_info()
-            logger.log('Got match info for all profitable bets')
-            
 
             if not self.df.empty:
                 return self.df

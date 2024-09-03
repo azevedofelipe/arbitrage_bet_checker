@@ -155,25 +155,23 @@ class TreeViewFrame(ctk.CTkFrame):
         style.map('Treeview', 
                   background=[('selected', '#4a4a4a')])
 
-        self.tree = ttk.Treeview(self, columns=("time", "match", "profit", "url"), show='headings')
-        self.tree.heading("time", text="Time")
-        self.tree.heading("match", text="Matchup")
+        self.tree = ttk.Treeview(self, columns=("bookies", "profit", "url"), show='headings')
+        self.tree.heading("bookies", text="Bookmakers")
         self.tree.heading("profit", text="Profit %")
         self.tree.heading("url", text="Link")
 
         
-        self.tree.column("time", width=100,anchor='center')  
         self.tree.column("profit", width=80,anchor='center')  
-        self.tree.column("match", anchor='center')  
+        self.tree.column("bookies", anchor='center')  
         self.tree.column("url", width=100,anchor='center')  
 
-        self.tree.pack(fill="both", expand=True, padx=20, pady=10)
+        self.tree.grid(row=1,column=0,padx=20, pady=10, sticky='nsew')
 
         self.tree.bind("<ButtonRelease-1>", self.on_tree_click)
         self.tree.bind("<Motion>", self.on_mouse_move)
 
         self.button_find = ctk.CTkButton(self, text="Find Sure Bets", command=generate_and_load_data_callback, width=100, height=30)
-        self.button_find.pack(pady=10)
+        self.button_find.grid(row=2,column=0, pady=10)
 
     def load_data(self, df):
         self.df = df
@@ -182,10 +180,10 @@ class TreeViewFrame(ctk.CTkFrame):
             self.tree.delete(item)
 
         for idx, row in self.df.iterrows():
-            self.tree.insert("", "end",iid=idx,values=(row['time'], f"{row['home']} vs {row['away']}", f"{row['profit']}%", "Link"))
+            self.tree.insert("", "end",iid=idx,values=(f"{', '.join(row['bookies'])}", f"{row['profit']}%", "Link"))
 
     def on_tree_click(self, event):
-        if self.tree.identify_column(event.x) == "#4":
+        if self.tree.identify_column(event.x) == "#3":
             item_id = int(self.tree.selection()[0])
             url = self.df.loc[item_id,'url']
             webbrowser.open(url)
@@ -195,7 +193,7 @@ class TreeViewFrame(ctk.CTkFrame):
         item = self.tree.identify_row(event.y)
         if region == "cell" and item:
             column = self.tree.identify_column(event.x)
-            if column == "#4":
+            if column == "#3":
                 self.tree.configure(cursor="hand2")
             else:
                 self.tree.configure(cursor="")
