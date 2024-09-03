@@ -99,7 +99,13 @@ class CalculatorTab(ctk.CTkFrame):
         bet_amount = float(self.bet_amount.get())
         returns = calculate(odds,bet_amount)
 
+        if self.entry_fields[0][0].get() == '':
+            self.label_profit.configure(text='')
+            self.entry_fields[0][1].configure(text='')
+            return
+
         for field in self.entry_fields:
+
             if field[0].get() == '':
                 field[1].configure(text='')
                 continue
@@ -154,6 +160,9 @@ class TreeViewFrame(ctk.CTkFrame):
                         font=('Calibri', 11))
         style.map('Treeview', 
                   background=[('selected', '#4a4a4a')])
+        
+        self.match_count = ctk.CTkLabel(self, text = '')
+        self.match_count.grid(row=0,column=0,padx=20,pady=10,sticky='w')
 
         self.tree = ttk.Treeview(self, columns=("bookies", "profit", "url"), show='headings')
         self.tree.heading("bookies", text="Bookmakers")
@@ -181,6 +190,8 @@ class TreeViewFrame(ctk.CTkFrame):
 
         for idx, row in self.df.iterrows():
             self.tree.insert("", "end",iid=idx,values=(f"{', '.join(row['bookies'])}", f"{row['profit']}%", "Link"))
+
+        self.match_count.configure(text=f'Matches Found: {len(self.df)}')
 
     def on_tree_click(self, event):
         if self.tree.identify_column(event.x) == "#3":
