@@ -43,9 +43,14 @@ class FilterTab(ctk.CTkFrame):
         self.button_apply.grid(row=4, column=0, pady=10,columnspan=2)
 
     def apply_filters(self):
+        region = self.combo_region.get()
+
         self.settings.days_scan = self.days_var.get()
         self.settings.floor_profit = self.profit_var.get()
-        self.settings.region = (self.combo_region.get(), REGIONS[self.combo_region.get()])
+        if self.settings.region[0] != region:
+            self.settings.region = (region, REGIONS[region])
+            self.settings.bookmakers = get_region_bookmakers(REGIONS[region])
+        
         self.settings.save()
 
 

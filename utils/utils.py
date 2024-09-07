@@ -58,13 +58,19 @@ def get_start_end_days(days_count: int) -> tuple:
     return (str(current_date), str(end_date))
 
 
-def get_region_bookmakers(driver, region: str) -> list:
+def get_region_bookmakers(region: str, driver = None) -> list:
     bookmakers = []
-    url = f'https://oddspedia.com/api/v1/getBookmakers?geoCode={region}&geoState=&language=en'
 
+    if not driver:
+        driver = create_driver()
+
+    url = f'https://oddspedia.com/api/v1/getBookmakers?geoCode={region}&geoState=&language=en'
     json = call_api(driver,url)
 
     if json:
         bookmakers = [item['name'] for item in json['data']]
+
+    if not driver:
+        driver.quit()
     
     return bookmakers
