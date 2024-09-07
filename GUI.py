@@ -248,8 +248,8 @@ class App(ctk.CTk):
         self.tree_view_frame = TreeViewFrame(master=self, df=pd.DataFrame(columns=["time", "home", "away", "profit", "url"]),generate_and_load_data_callback=self.generate_and_load_data)
         self.tree_view_frame.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
 
-        # Load data onstart, disabled for now
-        # self.after(600, self.generate_and_load_data)
+        # Load matches on start
+        self.after(600, self.generate_and_load_data)
 
     def generate_and_load_data(self):
         self.tree_view_frame.option_clear()

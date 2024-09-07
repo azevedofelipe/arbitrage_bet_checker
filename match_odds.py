@@ -8,7 +8,7 @@ DROP_COLS = ['odd_name','value','bid','link','slug','bookie','status','offerId']
 
 class MatchOdds:
     def __init__(self, settings: Settings):
-        self.driver = create_driver(False)
+        self.driver = create_driver()
         days = get_start_end_days(settings.days_scan)
         self.start_date = days[0]
         self.end_date = days[1]
@@ -20,7 +20,6 @@ class MatchOdds:
         self.profitable = 0
 
         self.df = self.get_all_odds()
-        self.driver.quit()
 
         if not self.df.empty:
             self.profitable = len(self.df)
