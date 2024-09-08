@@ -1,6 +1,7 @@
 import CTkSpinbox.ctkspinbox
 import customtkinter as ctk
 from tkinter import ttk
+import tkinter as tk
 from match_odds import MatchOdds
 import webbrowser
 import pandas as pd
@@ -20,39 +21,72 @@ class FilterTab(ctk.CTkFrame):
         self.label_days.grid(row=0, column=0,padx=10, sticky='w')
         self.days_var = ctk.IntVar()
         self.days_filter = CTkSpinbox(self,start_value=self.settings.days_scan,min_value=1,max_value=30,scroll_value=1,variable=self.days_var,height=30,width=70,font=('Arial',11))
-        self.days_filter.grid(row=0,column=1,pady=10,padx=10,sticky='e')
+        self.days_filter.grid(row=0,column=1,pady=(0,10),padx=10,sticky='e')
 
         self.label_profit = ctk.CTkLabel(self, text="Profit %:")
-        self.label_profit.grid(row=1, column=0,pady=10,padx=10,sticky='w')
+        self.label_profit.grid(row=1, column=0,pady=(0,10),padx=10,sticky='w')
         self.profit_var = ctk.IntVar()
         self.profit_filter = CTkSpinbox(self,start_value=self.settings.floor_profit,min_value=0,max_value=100,scroll_value=1,variable=self.profit_var,height=30,width=70,font=('Arial',11))
-        self.profit_filter.grid(row=1,column=1,pady=10,padx=10,sticky='e')
-
-        self.label_refresh = ctk.CTkLabel(self, text="Refresh Rate:")
-        self.label_refresh.grid(row=2, column=0,pady=10,padx=10, sticky='w')
-        self.combo_refresh = ctk.CTkComboBox(self,values=['30','60','120','300','600','1800'],width=70)
-        self.combo_refresh.grid(row=2, column=1,pady=10,padx=10,sticky='e')
-        self.combo_refresh.set(self.settings.refresh_time)
+        self.profit_filter.grid(row=1,column=1,pady=(0,10),padx=10,sticky='e')
 
         self.label_region = ctk.CTkLabel(self, text="Region:")
-        self.label_region.grid(row=3, column=0,pady=10,padx=10, sticky='w')
+        self.label_region.grid(row=3, column=0,pady=(0,10),padx=10, sticky='w')
         self.combo_region = ctk.CTkComboBox(self,values=list(REGIONS.keys()),width=70)
         self.combo_region.set(self.settings.region[0])
-        self.combo_region.grid(row=3, column=1,pady=10,padx=10,sticky='e')
+        self.combo_region.grid(row=3, column=1,pady=(0,10),padx=10,sticky='e')
+
+        self.label_bookies = ctk.CTkLabel(self, text="Bookmakers:")
+        self.label_bookies.grid(row=4, column=0,pady=(10,0), padx=10, sticky='w')
+        self.bookies = Bookies(self,item_list=self.settings.bookmakers,height=50)
+        self.bookies._scrollbar.configure(height=100)
+        self.bookies.grid(row=5,column=0,columnspan=2,padx=10,pady=(0,10))
 
         self.button_apply = ctk.CTkButton(self, text="Apply", command=self.apply_filters,width=80)
-        self.button_apply.grid(row=4, column=0, pady=10,columnspan=2)
+        self.button_apply.grid(row=6, column=0, columnspan=2)
 
     def apply_filters(self):
         region = self.combo_region.get()
 
         self.settings.days_scan = self.days_var.get()
         self.settings.floor_profit = self.profit_var.get()
+
         if self.settings.region[0] != region:
             self.settings.region = (region, REGIONS[region])
             self.settings.bookmakers = get_region_bookmakers(REGIONS[region])
+            self.bookies.reset_items()
+
+        self.settings.bookmakers = self.bookies.list_items()
         
         self.settings.save()
+
+class Bookies(ctk.CTkScrollableFrame):
+    def __init__(self,master, item_list, **kwargs):
+        super().__init__(master,**kwargs)
+
+        self.checkbox_list = []
+        self.item_list = item_list
+        self.add_items()
+
+
+    def add_items(self):
+        for item, value in self.item_list.items():
+            var = tk.BooleanVar(value=value)
+            checkbox = ctk.CTkCheckBox(self, text=item,variable=var, checkbox_width=15, checkbox_height=15, width=150)
+            checkbox.grid(row=len(self.checkbox_list), column=0, pady=(0, 10))
+            self.checkbox_list.append(checkbox)
+
+    def list_items(self) -> dict:
+        items = {item.cget("text"): item.cget("variable").get() for item in self.checkbox_list}
+        return items
+
+    def reset_items(self):
+        for item in self.checkbox_list:
+            item.destroy()
+
+        self.checkbox_list.clear()
+
+        self.add_items() 
+
 
 
 class CalculatorTab(ctk.CTkFrame):
@@ -110,7 +144,7 @@ class CalculatorTab(ctk.CTkFrame):
 
         if self.entry_fields[0][0].get() == '':
             self.label_profit.configure(text='')
-            self.entry_fields[0][1].configure(text='')
+            self.entry_fields[0][1].configure(text='-')
             return
 
         for field in self.entry_fields:
@@ -132,7 +166,6 @@ class CalculatorTab(ctk.CTkFrame):
     
 
     def clear(self):
-        self.bet_amount.delete(0,'end')
         self.label_profit.configure(text='')
 
         for field in self.entry_fields:
@@ -164,6 +197,8 @@ class TreeViewFrame(ctk.CTkFrame):
         self.df = df
         self.calculator_tab = calculator_tab
 
+        self.grid_rowconfigure(0,weight=1)
+        self.grid_columnconfigure(0,weight=1)
         
         style = ttk.Style()
         style.theme_use("default")
@@ -180,8 +215,6 @@ class TreeViewFrame(ctk.CTkFrame):
         style.map('Treeview', 
                   background=[('selected', '#4a4a4a')])
         
-        self.match_count = ctk.CTkLabel(self, text = '')
-        self.match_count.grid(row=0,column=0,padx=20,pady=10,sticky='w')
 
         self.tree = ttk.Treeview(self, columns=("bookies", "profit", "url","calculate"), show='headings')
         self.tree.heading("bookies", text="Bookmakers")
@@ -190,18 +223,21 @@ class TreeViewFrame(ctk.CTkFrame):
         self.tree.heading("calculate", text="Calculate")
 
         
-        self.tree.column("profit", width=80,anchor='center')  
-        self.tree.column("bookies", anchor='center')  
-        self.tree.column("url", width=80,anchor='center')  
-        self.tree.column("calculate", width=80,anchor='center')  
+        self.tree.column("bookies", width=250, anchor='center')  
+        self.tree.column("profit", width=100, anchor='center')  
+        self.tree.column("url", width=150,anchor='center')  
+        self.tree.column("calculate", width=150,anchor='center')  
 
-        self.tree.grid(row=1,column=0,padx=20, pady=10, sticky='nsew')
+        self.tree.grid(row=0,column=0,padx=10, pady=10, sticky='nsew')
 
         self.tree.bind("<ButtonRelease-1>", self.on_tree_click)
         self.tree.bind("<Motion>", self.on_mouse_move)
 
+        self.match_count = ctk.CTkLabel(self, text = '')
+        self.match_count.grid(row=1,column=0,padx=20)
+
         self.button_find = ctk.CTkButton(self, text="Find Sure Bets", command=generate_and_load_data_callback, width=100, height=30)
-        self.button_find.grid(row=2,column=0, pady=10)
+        self.button_find.grid(row=2,column=0, pady=4)
 
     def load_data(self, df):
         self.df = df
@@ -223,9 +259,9 @@ class TreeViewFrame(ctk.CTkFrame):
         if self.tree.identify_column(event.x) == "#4":
             item_id = int(self.tree.selection()[0])
             odds = self.df.loc[item_id,'odds']
-            print(odds)
+            self.calculator_tab.clear()
+
             for odd, entry in zip(odds,self.calculator_tab.entry_fields):
-                entry[0].delete(0,'end')
                 entry[0].insert(-1,odd['value'])
 
 
@@ -250,19 +286,17 @@ class App(ctk.CTk):
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
 
         self.df = None
 
         self.tab_view_frame = TabView(master=self,width=70)
-        self.tab_view_frame.grid(row=0, column=1, padx=20, pady=10, sticky="nsew")
+        self.tab_view_frame.grid(row=0, column=1, padx=15, pady=10, sticky="nsew")
 
-        self.tree_view_frame = TreeViewFrame(master=self, df=pd.DataFrame(columns=["time", "home", "away", "profit", "url"]),generate_and_load_data_callback=self.generate_and_load_data, calculator_tab = self.tab_view_frame.calculator_tab)
-        self.tree_view_frame.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
+        self.tree_view_frame = TreeViewFrame(master=self, df=pd.DataFrame(),generate_and_load_data_callback=self.generate_and_load_data, calculator_tab = self.tab_view_frame.calculator_tab)
+        self.tree_view_frame.grid(row=0, column=0, padx=0, pady=10, sticky="ns")
 
         # Load matches on start
-        self.after(600, self.generate_and_load_data)
+        # self.after(600, self.generate_and_load_data)
 
     def generate_and_load_data(self):
         self.tree_view_frame.option_clear()
