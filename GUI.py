@@ -7,6 +7,7 @@ import pandas as pd
 from CTkSpinbox import CTkSpinbox
 from settings import Settings, REGIONS
 from arb_calculator import calculate
+from utils.utils import get_region_bookmakers
 
 
 class FilterTab(ctk.CTkFrame):
@@ -158,9 +159,10 @@ class TabView(ctk.CTkTabview):
 
 
 class TreeViewFrame(ctk.CTkFrame):
-    def __init__(self, master, df, generate_and_load_data_callback, **kwargs):
+    def __init__(self, master, df, generate_and_load_data_callback, calculator_tab, **kwargs):
         super().__init__(master, **kwargs)
         self.df = df
+        self.calculator_tab = calculator_tab
 
         
         style = ttk.Style()
@@ -181,15 +183,17 @@ class TreeViewFrame(ctk.CTkFrame):
         self.match_count = ctk.CTkLabel(self, text = '')
         self.match_count.grid(row=0,column=0,padx=20,pady=10,sticky='w')
 
-        self.tree = ttk.Treeview(self, columns=("bookies", "profit", "url"), show='headings')
+        self.tree = ttk.Treeview(self, columns=("bookies", "profit", "url","calculate"), show='headings')
         self.tree.heading("bookies", text="Bookmakers")
         self.tree.heading("profit", text="Profit %")
         self.tree.heading("url", text="Link")
+        self.tree.heading("calculate", text="Calculate")
 
         
         self.tree.column("profit", width=80,anchor='center')  
         self.tree.column("bookies", anchor='center')  
-        self.tree.column("url", width=100,anchor='center')  
+        self.tree.column("url", width=80,anchor='center')  
+        self.tree.column("calculate", width=80,anchor='center')  
 
         self.tree.grid(row=1,column=0,padx=20, pady=10, sticky='nsew')
 
@@ -206,7 +210,7 @@ class TreeViewFrame(ctk.CTkFrame):
             self.tree.delete(item)
 
         for idx, row in self.df.iterrows():
-            self.tree.insert("", "end",iid=idx,values=(f"{', '.join(row['bookies'])}", f"{row['profit']}%", "Link"))
+            self.tree.insert("", "end",iid=idx,values=(f"{', '.join(row['bookies'])}", f"{row['profit']}%", "Link", "Calculate"))
 
         self.match_count.configure(text=f'Matches Found: {len(self.df)}')
 
@@ -215,6 +219,15 @@ class TreeViewFrame(ctk.CTkFrame):
             item_id = int(self.tree.selection()[0])
             url = self.df.loc[item_id,'url']
             webbrowser.open(url)
+
+        if self.tree.identify_column(event.x) == "#4":
+            item_id = int(self.tree.selection()[0])
+            odds = self.df.loc[item_id,'odds']
+            print(odds)
+            for odd, entry in zip(odds,self.calculator_tab.entry_fields):
+                entry[0].delete(0,'end')
+                entry[0].insert(-1,odd['value'])
+
 
     def on_mouse_move(self, event):
         region = self.tree.identify_region(event.x, event.y)
@@ -245,7 +258,7 @@ class App(ctk.CTk):
         self.tab_view_frame = TabView(master=self,width=70)
         self.tab_view_frame.grid(row=0, column=1, padx=20, pady=10, sticky="nsew")
 
-        self.tree_view_frame = TreeViewFrame(master=self, df=pd.DataFrame(columns=["time", "home", "away", "profit", "url"]),generate_and_load_data_callback=self.generate_and_load_data)
+        self.tree_view_frame = TreeViewFrame(master=self, df=pd.DataFrame(columns=["time", "home", "away", "profit", "url"]),generate_and_load_data_callback=self.generate_and_load_data, calculator_tab = self.tab_view_frame.calculator_tab)
         self.tree_view_frame.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
 
         # Load matches on start
