@@ -58,8 +58,8 @@ def get_start_end_days(days_count: int) -> tuple:
     return (str(current_date), str(end_date))
 
 
-def get_region_bookmakers(region: str, driver = None) -> list:
-    bookmakers = []
+def get_region_bookmakers(region: str, driver = None) -> dict:
+    bookmakers = {}
 
     if not driver:
         driver = create_driver()
@@ -68,9 +68,11 @@ def get_region_bookmakers(region: str, driver = None) -> list:
     json = call_api(driver,url)
 
     if json:
-        bookmakers = [item['name'] for item in json['data']]
+        bookmakers = {item['name']: True for item in json['data']}
+        logger.log(f'Got Bookmakers for {region}')
 
     if not driver:
         driver.quit()
     
+    logger.log(f'{bookmakers}')
     return bookmakers
