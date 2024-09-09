@@ -13,6 +13,7 @@ class Settings:
     region: str = 'BR'
     match_status: str = 'prematch'    # List of match status ('prematch','inplay','all') others
     bookmakers: dict = field(default_factory=dict)  # Get all from API
+    bet_amount: float = 100
 
 
     def save(self):

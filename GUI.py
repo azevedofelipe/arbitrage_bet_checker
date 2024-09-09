@@ -96,10 +96,12 @@ class CalculatorTab(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         
+        self.settings = master.master.settings
         self.label_odd = ctk.CTkLabel(self, text="Total Bet:",width=90)
         self.label_odd.grid(row=0, column=0,columnspan=2)
         self.bet_amount = ctk.CTkEntry(self,width=90)
         self.bet_amount.configure(justify='center')
+        self.bet_amount.insert(-1,self.settings.bet_amount)
         self.bet_amount.grid(row=1, column=0,pady=5,columnspan=2)
 
         self.label_odd = ctk.CTkLabel(self, text="Odd",width=90)
@@ -143,6 +145,8 @@ class CalculatorTab(ctk.CTkFrame):
     def calculate(self):
         odds = [float(field[0].get().replace(',','.')) for field in self.entry_fields if field[0].get() != '']
         bet_amount = float(self.bet_amount.get().replace(',','.'))
+        self.settings.bet_amount = bet_amount
+        self.settings.save()
         returns = calculate(odds,bet_amount)
 
         if self.entry_fields[0][0].get() == '':
@@ -187,8 +191,9 @@ class CalculatorTab(ctk.CTkFrame):
 
 
 class TabView(ctk.CTkTabview):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, settings, **kwargs):
         super().__init__(master, **kwargs)
+        self.settings = settings
 
         self.add("Filters")
         self.add("Calculator")
@@ -197,7 +202,7 @@ class TabView(ctk.CTkTabview):
             self.tab(tab_name).grid_columnconfigure(0, weight=1)
             self.tab(tab_name).grid_rowconfigure(0, weight=1)
 
-        self.calculator_tab = CalculatorTab(master=self.tab("Calculator"),width=100,height=200)
+        self.calculator_tab = CalculatorTab(master=self.tab("Calculator"), width=100,height=200)
         self.calculator_tab.grid(row=0, column=0, pady=(10,10))
 
         self.filter_tab = FilterTab(Settings,master=self.tab("Filters"),width=100, height=200)
@@ -301,8 +306,9 @@ class App(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
 
         self.df = None
+        self.settings = Settings.load()
 
-        self.tab_view_frame = TabView(master=self,width=70)
+        self.tab_view_frame = TabView(master=self,settings=self.settings, width=70)
         self.tab_view_frame.grid(row=0, column=1, padx=15, pady=10, sticky="nsew")
 
         self.tree_view_frame = TreeViewFrame(master=self, generate_and_load_data_callback=self.generate_and_load_data, calculator_tab = self.tab_view_frame.calculator_tab)
