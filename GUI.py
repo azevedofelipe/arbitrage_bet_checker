@@ -4,7 +4,6 @@ from tkinter import ttk
 import tkinter as tk
 from match_odds import MatchOdds
 import webbrowser
-import pandas as pd
 from CTkSpinbox import CTkSpinbox
 from settings import Settings, REGIONS
 from arb_calculator import calculate
@@ -31,7 +30,7 @@ class FilterTab(ctk.CTkFrame):
 
         self.label_region = ctk.CTkLabel(self, text="Region:")
         self.label_region.grid(row=3, column=0,pady=(0,10),padx=10, sticky='w')
-        self.combo_region = ctk.CTkComboBox(self,values=list(REGIONS.keys()),width=70)
+        self.combo_region = ctk.CTkComboBox(self,values=list(REGIONS.keys()),width=90)
         self.combo_region.set(self.settings.region[0])
         self.combo_region.grid(row=3, column=1,pady=(0,10),padx=10,sticky='e')
 
@@ -198,17 +197,16 @@ class TabView(ctk.CTkTabview):
             self.tab(tab_name).grid_columnconfigure(0, weight=1)
             self.tab(tab_name).grid_rowconfigure(0, weight=1)
 
-        self.calculator_tab = CalculatorTab(master=self.tab("Calculator"),width=70)
-        self.calculator_tab.grid(row=0, column=0, pady=20)
+        self.calculator_tab = CalculatorTab(master=self.tab("Calculator"),width=100,height=200)
+        self.calculator_tab.grid(row=0, column=0, pady=(10,10))
 
-        self.filter_tab = FilterTab(Settings,master=self.tab("Filters"),width=70)
-        self.filter_tab.grid(row=0,column=0,pady=20)
+        self.filter_tab = FilterTab(Settings,master=self.tab("Filters"),width=100, height=200)
+        self.filter_tab.grid(row=0,column=0,pady=(10,10))
 
 
 class TreeViewFrame(ctk.CTkFrame):
-    def __init__(self, master, df, generate_and_load_data_callback, calculator_tab, **kwargs):
+    def __init__(self, master, generate_and_load_data_callback, calculator_tab, **kwargs):
         super().__init__(master, **kwargs)
-        self.df = df
         self.calculator_tab = calculator_tab
 
         self.grid_rowconfigure(0,weight=1)
@@ -249,12 +247,15 @@ class TreeViewFrame(ctk.CTkFrame):
 
         self.match_count = ctk.CTkLabel(self, text = '')
         self.match_count.grid(row=1,column=0,padx=20)
+        self.blacklist_count = ctk.CTkLabel(self, text = '')
+        self.blacklist_count.grid(row=2,column=0,padx=20)
 
         self.button_find = ctk.CTkButton(self, text="Find Sure Bets", command=generate_and_load_data_callback, width=100, height=30)
-        self.button_find.grid(row=2,column=0, pady=4)
+        self.button_find.grid(row=3,column=0, pady=(0,10))
 
-    def load_data(self, df):
+    def load_data(self, df, blacklisted):
         self.df = df
+        self.blacklisted = blacklisted
 
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -263,6 +264,7 @@ class TreeViewFrame(ctk.CTkFrame):
             self.tree.insert("", "end",iid=idx,values=(f"{', '.join(row['bookies'])}", f"{row['profit']}%", "Link", "Calculate"))
 
         self.match_count.configure(text=f'Matches Found: {len(self.df)}')
+        self.blacklist_count.configure(text=f'Blacklisted Matches: {len(self.blacklisted)} ')
 
     def on_tree_click(self, event):
         if self.tree.identify_column(event.x) == "#3":
