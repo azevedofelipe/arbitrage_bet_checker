@@ -37,7 +37,7 @@ class FilterTab(ctk.CTkFrame):
 
         self.label_bookies = ctk.CTkLabel(self, text="Bookmakers:")
         self.label_bookies.grid(row=4, column=0,pady=(10,0), padx=10, sticky='w')
-        self.bookies = Bookies(self,item_list=self.settings.bookmakers,height=50)
+        self.bookies = Bookies(self,settings=self.settings,height=50)
         self.bookies._scrollbar.configure(height=100)
         self.bookies.grid(row=5,column=0,columnspan=2,padx=10,pady=(0,10))
 
@@ -53,18 +53,21 @@ class FilterTab(ctk.CTkFrame):
         if self.settings.region[0] != region:
             self.settings.region = (region, REGIONS[region])
             self.settings.bookmakers = get_region_bookmakers(REGIONS[region])
+            self.settings.save()
             self.bookies.reset_items()
+        else: 
+            self.settings.bookmakers = self.bookies.list_items()
 
-        self.settings.bookmakers = self.bookies.list_items()
-        
         self.settings.save()
 
+
 class Bookies(ctk.CTkScrollableFrame):
-    def __init__(self,master, item_list, **kwargs):
+    def __init__(self,master, settings, **kwargs):
         super().__init__(master,**kwargs)
 
         self.checkbox_list = []
-        self.item_list = item_list
+        self.settings = settings
+        self.item_list = settings.bookmakers
         self.add_items()
 
 
@@ -80,13 +83,14 @@ class Bookies(ctk.CTkScrollableFrame):
         return items
 
     def reset_items(self):
+        self.settings.load() 
+        self.item_list = self.settings.bookmakers
+
         for item in self.checkbox_list:
             item.destroy()
 
         self.checkbox_list.clear()
-
         self.add_items() 
-
 
 
 class CalculatorTab(ctk.CTkFrame):
@@ -173,6 +177,8 @@ class CalculatorTab(ctk.CTkFrame):
             field[1].configure(text='-')
 
 
+    def calc_match_odds(self,odds):
+        self.clear()
 class TabView(ctk.CTkTabview):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
