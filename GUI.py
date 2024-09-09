@@ -179,6 +179,14 @@ class CalculatorTab(ctk.CTkFrame):
 
     def calc_match_odds(self,odds):
         self.clear()
+
+        for odd, entry in zip(odds,self.entry_fields):
+            entry[0].insert(-1,odd['value'])
+
+        if self.bet_amount.get() != '':
+            self.calculate()
+
+
 class TabView(ctk.CTkTabview):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
