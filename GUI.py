@@ -275,10 +275,7 @@ class TreeViewFrame(ctk.CTkFrame):
         if self.tree.identify_column(event.x) == "#4":
             item_id = int(self.tree.selection()[0])
             odds = self.df.loc[item_id,'odds']
-            self.calculator_tab.clear()
-
-            for odd, entry in zip(odds,self.calculator_tab.entry_fields):
-                entry[0].insert(-1,odd['value'])
+            self.calculator_tab.calc_match_odds(odds)
 
 
     def on_mouse_move(self, event):
@@ -308,7 +305,7 @@ class App(ctk.CTk):
         self.tab_view_frame = TabView(master=self,width=70)
         self.tab_view_frame.grid(row=0, column=1, padx=15, pady=10, sticky="nsew")
 
-        self.tree_view_frame = TreeViewFrame(master=self, df=pd.DataFrame(),generate_and_load_data_callback=self.generate_and_load_data, calculator_tab = self.tab_view_frame.calculator_tab)
+        self.tree_view_frame = TreeViewFrame(master=self, generate_and_load_data_callback=self.generate_and_load_data, calculator_tab = self.tab_view_frame.calculator_tab)
         self.tree_view_frame.grid(row=0, column=0, padx=0, pady=10, sticky="ns")
 
         # Load matches on start
@@ -318,8 +315,7 @@ class App(ctk.CTk):
         self.tree_view_frame.option_clear()
         self.settings = Settings.load()
         self.odds = MatchOdds(self.settings)
-        self.df = self.odds.df
-        self.tree_view_frame.load_data(self.df)
+        self.tree_view_frame.load_data(self.odds.df, self.odds.blacklisted_df)
 
 
 
