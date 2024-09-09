@@ -22,7 +22,7 @@ class FilterTab(ctk.CTkFrame):
         self.days_filter = CTkSpinbox(self,start_value=self.settings.days_scan,min_value=1,max_value=30,scroll_value=1,variable=self.days_var,height=30,width=70,font=('Arial',11))
         self.days_filter.grid(row=0,column=1,pady=(0,10),padx=10,sticky='e')
 
-        self.label_profit = ctk.CTkLabel(self, text="Profit %:")
+        self.label_profit = ctk.CTkLabel(self, text="Min. Profit %:")
         self.label_profit.grid(row=1, column=0,pady=(0,10),padx=10,sticky='w')
         self.profit_var = ctk.IntVar()
         self.profit_filter = CTkSpinbox(self,start_value=self.settings.floor_profit,min_value=0,max_value=100,scroll_value=1,variable=self.profit_var,height=30,width=70,font=('Arial',11))
@@ -95,8 +95,8 @@ class Bookies(ctk.CTkScrollableFrame):
 class CalculatorTab(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-        
         self.settings = master.master.settings
+
         self.label_odd = ctk.CTkLabel(self, text="Total Bet:",width=90)
         self.label_odd.grid(row=0, column=0,columnspan=2)
         self.bet_amount = ctk.CTkEntry(self,width=90)
@@ -147,6 +147,7 @@ class CalculatorTab(ctk.CTkFrame):
         bet_amount = float(self.bet_amount.get().replace(',','.'))
         self.settings.bet_amount = bet_amount
         self.settings.save()
+
         returns = calculate(odds,bet_amount)
 
         if self.entry_fields[0][0].get() == '':
@@ -268,8 +269,13 @@ class TreeViewFrame(ctk.CTkFrame):
         for idx, row in self.df.iterrows():
             self.tree.insert("", "end",iid=idx,values=(f"{', '.join(row['bookies'])}", f"{row['profit']}%", "Link", "Calculate"))
 
-        self.match_count.configure(text=f'Matches Found: {len(self.df)}')
-        self.blacklist_count.configure(text=f'Blacklisted Matches: {len(self.blacklisted)} ')
+        self.match_count.configure(text=f'Sure Bets Found: {len(self.df)}')
+
+        blacklist_text = ''
+        if len(self.blacklisted) > 0:
+            blacklist_text = f'Blacklisted Matches: {len(self.blacklisted)} '
+
+        self.blacklist_count.configure(text=blacklist_text)
 
     def on_tree_click(self, event):
         if self.tree.identify_column(event.x) == "#3":
