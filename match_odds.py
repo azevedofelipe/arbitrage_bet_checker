@@ -16,6 +16,8 @@ class MatchOdds:
         self.floor_profit = settings.floor_profit
         self.status = settings.match_status
         self.region = settings.region[1]
+        self.blacklist = [bookie for bookie, val in settings.bookmakers.items() if not val]
+
         self.df_list = []
         self.profitable = 0
 
@@ -46,7 +48,11 @@ class MatchOdds:
         return url
 
 
-    def single_line_matches(self):
+    def contains_blacklist_bookies(self, row) -> bool:
+        return any(item in self.blacklist for item in row)
+
+
+    def single_line_matches(self) -> None:
         try:
             odds_df = self.df.groupby('matchId')[['odd_name','value','bookie']].apply(lambda x: x.to_dict('records')).reset_index(name='odds')
             self.df = self.df.drop_duplicates(subset='matchId')
@@ -97,6 +103,9 @@ class MatchOdds:
 
             self.df = self.df[self.df['profit'] >= self.floor_profit]
             logger.log(f'Filtered {len(self.df)} profitable matches')
+
+            self.blacklisted_df = self.df[self.df['bookies'].apply(self.contains_blacklist_bookies)]
+            self.df = self.df[~self.df['bookies'].apply(self.contains_blacklist_bookies)]
 
             if not self.df.empty:
                 return self.df
