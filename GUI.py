@@ -6,7 +6,7 @@ from match_odds import MatchOdds
 import webbrowser
 from CTkSpinbox import CTkSpinbox
 from settings import Settings, REGIONS
-from arb_calculator import calculate
+from arb_calculator import calculate, get_profit
 from utils.utils import get_region_bookmakers
 
 
@@ -120,7 +120,7 @@ class CalculatorTab(ctk.CTkFrame):
         self.label_profit = ctk.CTkLabel(self, text="", width=90)
         self.label_profit.grid(row=6, column=0,columnspan=2)
 
-        self.button_new = ctk.CTkButton(self, text="Calculate", command=self.calculate,width=90)
+        self.button_new = ctk.CTkButton(self, text="Calculate", command=self.calculate_odds,width=90)
         self.button_new.grid(row=7, column=1, padx=10, pady=10,columnspan=1)
 
         self.button_clear = ctk.CTkButton(self, text="Clear", command=self.clear,width=90)
@@ -142,13 +142,14 @@ class CalculatorTab(ctk.CTkFrame):
         self.entry_fields.append((entry_odd, entry_amount))
 
 
-    def calculate(self):
+    def calculate_odds(self):
         odds = [float(field[0].get().replace(',','.')) for field in self.entry_fields if field[0].get() != '']
         bet_amount = float(self.bet_amount.get().replace(',','.'))
         self.settings.bet_amount = bet_amount
         self.settings.save()
 
         returns = calculate(odds,bet_amount)
+        profit_perc = get_profit(odds)
 
         if self.entry_fields[0][0].get() == '':
             self.label_profit.configure(text='')
@@ -170,7 +171,7 @@ class CalculatorTab(ctk.CTkFrame):
             else:
                 color = 'red'
 
-            self.label_profit.configure(text=f'Profit: $ {profit}', text_color = color)
+            self.label_profit.configure(text=f'Profit: $ {profit}  ( {profit_perc}% )', text_color = color)
     
 
     def clear(self):
@@ -188,7 +189,7 @@ class CalculatorTab(ctk.CTkFrame):
             entry[0].insert(-1,odd['value'])
 
         if self.bet_amount.get() != '':
-            self.calculate()
+            self.calculate_odds()
 
 
 class TabView(ctk.CTkTabview):
