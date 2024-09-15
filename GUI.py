@@ -212,9 +212,10 @@ class TabView(ctk.CTkTabview):
 
 
 class TreeViewFrame(ctk.CTkFrame):
-    def __init__(self, master, generate_and_load_data_callback, calculator_tab, **kwargs):
+    def __init__(self, master, generate_and_load_data_callback, tabs, **kwargs):
         super().__init__(master, **kwargs)
-        self.calculator_tab = calculator_tab
+        self.tabs = tabs
+        self.calculator_tab = tabs.calculator_tab
 
         self.grid_rowconfigure(0,weight=1)
         self.grid_columnconfigure(0,weight=1)
@@ -287,6 +288,7 @@ class TreeViewFrame(ctk.CTkFrame):
         if self.tree.identify_column(event.x) == "#4":
             item_id = int(self.tree.selection()[0])
             odds = self.df.loc[item_id,'odds']
+            self.tabs.set('Calculator')
             self.calculator_tab.calc_match_odds(odds)
 
 
@@ -318,7 +320,7 @@ class App(ctk.CTk):
         self.tab_view_frame = TabView(master=self,settings=self.settings, width=70)
         self.tab_view_frame.grid(row=0, column=1, padx=15, pady=10, sticky="nsew")
 
-        self.tree_view_frame = TreeViewFrame(master=self, generate_and_load_data_callback=self.generate_and_load_data, calculator_tab = self.tab_view_frame.calculator_tab)
+        self.tree_view_frame = TreeViewFrame(master=self, generate_and_load_data_callback=self.generate_and_load_data, tabs = self.tab_view_frame)
         self.tree_view_frame.grid(row=0, column=0, padx=0, pady=10, sticky="ns")
 
         # Load matches on start
