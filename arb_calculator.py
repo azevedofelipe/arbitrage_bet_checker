@@ -6,13 +6,12 @@ def calculate(odds: list,bet_amount: float) -> dict:
         bet_amount(float): Total amount willing to bet
 
     Returns:
-        unbiased_bet(dict): Amount to bet and profit for each odd ({odd: [bet,profit]})
+        unbiased_bet(dict): Amount to bet and profit for each odd ({odd: $ bet})
     '''
 
     unbiased_bet = {}   #Stores the amount to bet for each outcome for even profit
     
     for odd in odds:
-        bet_outputs = []
         odd_cumulative = 0
         
         # Calculates the number to divide bet_amount by
@@ -20,9 +19,8 @@ def calculate(odds: list,bet_amount: float) -> dict:
             odd_cumulative += odd / odd2
         initial_bet = bet_amount/odd_cumulative
         
-        bet_outputs.append(round(initial_bet,2))
+        bet_outputs = round(initial_bet,2)
 
-        bet_outputs.append(round((initial_bet * odd) - bet_amount,2))
         unbiased_bet[odd] = bet_outputs
 
     return(unbiased_bet)
@@ -48,6 +46,8 @@ def calculate_remaining_bets(odds):
     for odd1 in odds:
         value_multiplier += odd_selected / odd1
     total_bet = value_multiplier * amount_bet
+def calculate_profit(bet: float, odd: float, total_bet: float) -> float:
+    return round((bet * odd) - total_bet,2)
 
     print(f"You need to bet ${total_bet:.2f} in order to bet ${amount_bet} on {odd_selected}")
     # print_calc_results(calculate(odds=odds,bet_amount=total_bet),odds=odds)
