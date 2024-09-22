@@ -321,7 +321,7 @@ class App(ctk.CTk):
         self.tab_view_frame.grid(row=0, column=1, padx=15, pady=10, sticky="nsew")
 
         self.tree_view_frame = TreeViewFrame(master=self, generate_and_load_data_callback=self.generate_and_load_data, tabs = self.tab_view_frame)
-        self.tree_view_frame.grid(row=0, column=0, padx=0, pady=10, sticky="ns")
+        self.tree_view_frame.grid(row=0, column=0, padx=0, pady=30, sticky="ns")
 
         # Load matches on start
         # self.after(600, self.generate_and_load_data)
