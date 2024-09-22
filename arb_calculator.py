@@ -25,32 +25,26 @@ def calculate(odds: list,bet_amount: float) -> dict:
 
     return(unbiased_bet)
 
-def calculate_remaining_bets(odds):
 
-    print()
-    for x,odd in enumerate(odds,1):
-        print(f"[{x}] - {odd:.2f}")
-    print("[C] - Close")
-        
-    odd_selected = input("Which odd are you betting on: ").upper()
-    if odd_selected.isnumeric:
-        if int(odd_selected) <= len(odds):
-            odd_selected = odds[int(odd_selected)-1]
-    else:
-        return
-    
-    amount_bet = float(input(f"How much are you betting on {odd_selected}: "))
-
+# Calculates rest of total bet based on amount bet on one odd
+def calc_total_bet_needed(odds: list, odd_selected: float, amount_bet: float) -> tuple:
     value_multiplier = 0
 
-    for odd1 in odds:
-        value_multiplier += odd_selected / odd1
-    total_bet = value_multiplier * amount_bet
+    for odd in odds:
+        value_multiplier += odd_selected / odd
+
+    total_bet = round(value_multiplier * amount_bet,2)
+
+    remaining_bet = total_bet - amount_bet
+    odds.remove(odd_selected)
+    other_odds = odds
+
+    return remaining_bet, other_odds
+
+
 def calculate_profit(bet: float, odd: float, total_bet: float) -> float:
     return round((bet * odd) - total_bet,2)
 
-    print(f"You need to bet ${total_bet:.2f} in order to bet ${amount_bet} on {odd_selected}")
-    # print_calc_results(calculate(odds=odds,bet_amount=total_bet),odds=odds)
 
 # def is_float(string):
 #     try:
