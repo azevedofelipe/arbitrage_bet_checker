@@ -136,16 +136,28 @@ class CalculatorTab(ctk.CTkFrame):
         # Create two new entry fields
         row = len(self.entry_fields) + 3  # Calculate the next row based on the current number of entry fields
         entry_odd = ctk.CTkEntry(self,width=90)
-        entry_amount = ctk.CTkLabel(self,width=90,text='-')
+        entry_amount = ctk.CTkEntry(self,width=90,state='readonly')
 
         entry_odd.configure(justify='center')
-        entry_amount.configure(justify='center')
+        entry_amount.configure(justify='center',border_width=0)
 
         entry_odd.grid(row=row, column=0,sticky='n',padx=10,pady=4)
         entry_amount.grid(row=row, column=1,sticky='n',padx=10,pady=4)
 
         # Store the entry fields in the list
         self.entry_fields.append((entry_odd, entry_amount))
+        
+
+    def toggle_entry_state(self):
+        for field in self.entry_fields:
+            entry = field[1]
+
+            if self.switch_var.get() == 1:
+                entry.configure(border_width=0,state="readonly")
+                self.toggle_switch.configure(text="Regular")
+            else:
+                entry.configure(border_width=2,state='normal')
+                self.toggle_switch.configure(text="Remaining Bets")
 
 
     def calculate_odds(self):
@@ -159,17 +171,17 @@ class CalculatorTab(ctk.CTkFrame):
 
         if self.entry_fields[0][0].get() == '':
             self.label_profit.configure(text='')
-            self.entry_fields[0][1].configure(text='-')
+            change_entry_text(self.entry_fields[0][1],'-')
             return
 
         for field in self.entry_fields:
             if field[0].get() == '':
-                field[1].configure(text='-')
+                change_entry_text(field[1],'-')
                 continue
 
             odd = float(field[0].get().replace(',','.'))
 
-            field[1].configure(text=returns[odd][0])
+            change_entry_text(field[1],returns[odd])
             profit = calculate_profit(returns[odd], odd, bet_amount)
             
             if profit > 0:
