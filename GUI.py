@@ -8,6 +8,7 @@ from CTkSpinbox import CTkSpinbox
 from settings import Settings, REGIONS
 from arb_calculator import calculate, get_profit, calc_total_bet_needed, calculate_profit
 from utils.utils import get_region_bookmakers
+from utils.gui_utils import change_entry_text
 
 
 class FilterTab(ctk.CTkFrame):
@@ -97,18 +98,22 @@ class CalculatorTab(ctk.CTkFrame):
         super().__init__(master, **kwargs)
         self.settings = master.master.settings
 
+        self.switch_var = ctk.IntVar(value=1)
+        self.toggle_switch = ctk.CTkSwitch(self, text="Regular", variable=self.switch_var, command=self.toggle_entry_state, onvalue=1, offvalue=0)
+        self.toggle_switch.grid(row=0, column=0,columnspan=2)
+
         self.label_odd = ctk.CTkLabel(self, text="Total Bet:",width=90)
-        self.label_odd.grid(row=0, column=0,columnspan=2)
+        self.label_odd.grid(row=1, column=0,columnspan=2)
         self.bet_amount = ctk.CTkEntry(self,width=90)
         self.bet_amount.configure(justify='center')
         self.bet_amount.insert(-1,self.settings.bet_amount)
-        self.bet_amount.grid(row=1, column=0,pady=5,columnspan=2)
+        self.bet_amount.grid(row=2, column=0,pady=5,columnspan=2)
 
         self.label_odd = ctk.CTkLabel(self, text="Odd",width=90)
-        self.label_odd.grid(row=2, column=0,sticky='s')
+        self.label_odd.grid(row=3, column=0,sticky='s')
 
         self.label_amount = ctk.CTkLabel(self, text="$ Bet",width=90)
-        self.label_amount.grid(row=2, column=1,sticky='s')
+        self.label_amount.grid(row=4, column=1,sticky='s')
 
 
         self.entry_fields = []
@@ -118,13 +123,14 @@ class CalculatorTab(ctk.CTkFrame):
             self.create_entry_fields() 
 
         self.label_profit = ctk.CTkLabel(self, text="", width=90)
-        self.label_profit.grid(row=6, column=0,columnspan=2)
+        self.label_profit.grid(row=7, column=0,columnspan=2)
 
         self.button_new = ctk.CTkButton(self, text="Calculate", command=self.calculate_odds,width=90)
-        self.button_new.grid(row=7, column=1, padx=10, pady=10,columnspan=1)
+        self.button_new.grid(row=8, column=1, padx=10, pady=10,columnspan=1)
 
         self.button_clear = ctk.CTkButton(self, text="Clear", command=self.clear,width=90)
-        self.button_clear.grid(row=7, column=0, padx=10, pady=10,columnspan=1)
+        self.button_clear.grid(row=8, column=0, padx=10, pady=10,columnspan=1)
+
 
     def create_entry_fields(self):
         # Create two new entry fields
