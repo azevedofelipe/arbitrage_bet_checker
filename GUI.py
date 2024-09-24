@@ -6,7 +6,7 @@ from match_odds import MatchOdds
 import webbrowser
 from CTkSpinbox import CTkSpinbox
 from settings import Settings, REGIONS
-from arb_calculator import calculate, get_profit
+from arb_calculator import calculate, get_profit, calc_total_bet_needed, calculate_profit
 from utils.utils import get_region_bookmakers
 
 
@@ -164,7 +164,7 @@ class CalculatorTab(ctk.CTkFrame):
             odd = float(field[0].get().replace(',','.'))
 
             field[1].configure(text=returns[odd][0])
-            profit = returns[odd][1]
+            profit = calculate_profit(returns[odd], odd, bet_amount)
             
             if profit > 0:
                 color = 'green'
